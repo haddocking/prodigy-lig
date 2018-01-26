@@ -7,6 +7,8 @@ Calculate the Binding Affinity score using the PRODIGY-LIG model
 This script only requires one PDB file as input and expects that
 the all-atom contact script lives somewhere in the PATH. Failing
 that the user can provide the path to the executable.
+
+Authors: Panagiotis Kousos, Anna Vangone
 """
 
 from __future__ import print_function
