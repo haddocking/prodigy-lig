@@ -245,7 +245,7 @@ def calculate_DG_electrostatics(contact_counts, electrostatics_energy):
     elec_weight = 0.0115148
     cc_weight = -0.0014852
     nn_weight = 0.0057097
-    xx_weight = 0.1301806
+    xx_weight = -0.1301806
     intercept = -5.1002233
 
     return (
