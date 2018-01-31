@@ -8,7 +8,7 @@ This script only requires one PDB file as input and expects that
 the all-atom contact script lives somewhere in the PATH. Failing
 that the user can provide the path to the executable.
 
-Authors: Panagiotis Kousos, Anna Vangone
+Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt
 """
 
 from __future__ import print_function
@@ -238,6 +238,28 @@ def calculate_DG(contact_counts):
         intercept
     )
 
+def predict(structure , chains, electrostatics=None, contact_exe='contact-chainID_allAtoms', cutoff=10.5):
+    """
+    API method used by the webserver
+    """
+    if electrostatics is None:
+        electrostatics = extract_electrostatics(structure)
+    atomic_contacts = calc_atomic_contacts(contact_exe, structure, cutoff)
+    filtered_atomic_contacts = filter_contacts_by_chain(atomic_contacts, chains)
+
+    if len(filtered_atomic_contacts) == 0:
+        raise RuntimeWarning(
+            "There are no contacts between the specified chains."
+            " Are you sure about their correctness?"
+        )
+
+    atomic_contact_counts = calculate_contact_counts(filtered_atomic_contacts)
+
+    score = calculate_score(atomic_contact_counts, electrostatics)
+    dg_elec = calculate_DG_electrostatics(atomic_contact_counts, electrostatics)
+    dg = calculate_DG(atomic_contact_counts)
+
+    return {'score': score,'dg_elec': dg_elec,'dg': dg}
 
 def calculate_DG_electrostatics(contact_counts, electrostatics_energy):
     """
