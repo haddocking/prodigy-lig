@@ -1,0 +1,3 @@
+# Exclude common editor/IDE folders
+.vscode/
+.idea/

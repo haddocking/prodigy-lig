@@ -8,12 +8,77 @@ This script only requires one PDB file as input and expects that
 the all-atom contact script lives somewhere in the PATH. Failing
 that the user can provide the path to the executable.
 
-Authors: Panagiotis Kousos, Anna Vangone
+Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt
 """
 
 from __future__ import print_function
+import sys
 import argparse
 import subprocess
+
+
+class Prodigy_lig(object):
+    """Run the prodigy-lig calculations and store all the relevant output."""
+    def __init__(self, structure, chains, electrostatics, contact_exe='contact-chainID_allAtoms', cutoff=10.5):
+        """Initialise the Prodigy-lig instance."""
+        self.structure = structure
+        self.chains = chains
+        self.electrostatics = electrostatics
+        self.contact_exe = contact_exe
+        self.cutoff = cutoff
+        self.dg_score = None
+        self.dg_elec = None
+        self.dg = None
+        self.contact_counts = None
+
+    def predict(self):
+        """
+        API method used by the webserver
+        """
+        atomic_contacts = calc_atomic_contacts(self.contact_exe, self.structure, self.cutoff)
+        filtered_atomic_contacts = filter_contacts_by_chain(atomic_contacts, self.chains)
+
+        if len(filtered_atomic_contacts) == 0:
+            raise RuntimeWarning(
+                "There are no contacts between the specified chains."
+            )
+
+        self.contact_counts = calculate_contact_counts(filtered_atomic_contacts)
+
+        if self.electrostatics is None:
+            self.electrostatics = extract_electrostatics(self.structure)
+        if self.electrostatics is not None:
+            self.dg_score = calculate_score(self.contact_counts, self.electrostatics)
+            self.dg_elec = calculate_DG_electrostatics(self.contact_counts, self.electrostatics)
+        self.dg = calculate_DG(self.contact_counts)
+
+    def as_dict(self):
+        """Return the data of the class as a dictionary for the server."""
+        return {
+            'structure': self.structure,
+            'chains': self.chains,
+            'electrostatics': self.electrostatics,
+            'cutoff': self.cutoff,
+            'dg_score': self.dg_score,
+            'dg_elec': self.dg_elec,
+            'dg': self.dg,
+            'contact_counts': self.contact_counts
+        }
+
+    def print_prediction(self, outfile=''):
+        if outfile:
+            handle = open(outfile, 'w')
+        else:
+            handle = sys.stdout
+        """Print to the File or STDOUT if no filename is specified."""
+        if self.electrostatics is not None:
+            handle.write("{}\t{}\t{}\n".format("Job name", "DGprediction (Kcal/mol)", "DGscore"))
+            handle.write("{0}\t{1:.2f}\t{2:.2f}\n".format(self.structure, self.dg_elec, self.dg_score))
+        else:
+            handle.write("{}\t{}\n".format("Job name", "DGprediction (low refinement) (Kcal/mol)"))
+            handle.write("{0}\t{1:.2f}\n".format(self.structure, self.dg))
+        if handle is not sys.stdout:
+            handle.close()
 
 
 def extract_electrostatics(pdb_file):
@@ -30,10 +95,9 @@ def extract_electrostatics(pdb_file):
                 line = line.rstrip()
                 line = line.replace('REMARK energies: ', '')
                 energies = line.split(',')
-                break
+                return float(energies[6])
 
-    electrostatic_energy = float(energies[6])
-    return electrostatic_energy
+    return None
 
 
 def calc_atomic_contacts(contact_executable, pdb_file, cutoff=10.5):
@@ -306,33 +370,16 @@ def main():
     """Run it."""
     args = _parse_arguments()
 
-    contact_exe = args.contact_exe
-    input_pdb_file = args.input_file
-    cutoff = args.distance_cutoff
-    chains = args.chains
+    prodigy_lig = Prodigy_lig(
+        args.input_file,
+        args.chains,
+        args.electrostatics,
+        args.contact_exe,
+        args.distance_cutoff
+    )
 
-
-    if args.electrostatics is not None:
-        electrostatics = args.electrostatics
-    else:
-        electrostatics = extract_electrostatics(input_pdb_file)
-
-    atomic_contacts = calc_atomic_contacts(contact_exe, input_pdb_file, cutoff)
-    filtered_atomic_contacts = filter_contacts_by_chain(atomic_contacts, chains)
-
-    if len(filtered_atomic_contacts) == 0:
-        raise RuntimeWarning(
-            "There are no contacts between the specified chains."
-            " Are you sure about their correctness?"
-        )
-
-    atomic_contact_counts = calculate_contact_counts(filtered_atomic_contacts)
-
-    score = calculate_score(atomic_contact_counts, electrostatics)
-    dg_elec = calculate_DG_electrostatics(atomic_contact_counts, electrostatics)
-    dg = calculate_DG(atomic_contact_counts)
-
-    print("{0:.2f} {1:.2f} {2:.2f}".format(score, dg_elec, dg))
+    prodigy_lig.predict()
+    prodigy_lig.print_prediction()
 
 if __name__ == "__main__":
     main()
