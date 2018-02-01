@@ -12,6 +12,7 @@ Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt
 """
 
 from __future__ import print_function
+import sys
 import argparse
 import subprocess
 
