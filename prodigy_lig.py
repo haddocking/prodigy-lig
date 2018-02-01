@@ -64,14 +64,20 @@ class Prodigy_lig(object):
             'contact_counts': self.contact_counts
         }
 
-    def print_to_stdout(self):
-        """Print to the STDOUT."""
-        if self.electrostatics is not None:
-            print("{}\t{}\t{}".format("Job name", "DGprediction (Kcal/mol)", "DGscore"))
-            print("{0}\t{1:.2f}\t{2:.2f}".format(self.structure, self.dg_elec, self.dg_score))
+    def print_prediction(self, outfile=''):
+        if outfile:
+            handle = open(outfile, 'w')
         else:
-            print("{}\t{}".format("Job name", "DGprediction (low refinement) (Kcal/mol)"))
-            print("{0}\t{1:.2f}".format(self.structure, self.dg))
+            handle = sys.stdout
+        """Print to the File or STDOUT if no filename is specified."""
+        if self.electrostatics is not None:
+            handle.write("{}\t{}\t{}\n".format("Job name", "DGprediction (Kcal/mol)", "DGscore"))
+            handle.write("{0}\t{1:.2f}\t{2:.2f}\n".format(self.structure, self.dg_elec, self.dg_score))
+        else:
+            handle.write("{}\t{}\n".format("Job name", "DGprediction (low refinement) (Kcal/mol)"))
+            handle.write("{0}\t{1:.2f}\n".format(self.structure, self.dg))
+        if handle is not sys.stdout:
+            handle.close()
 
 
 def extract_electrostatics(pdb_file):
@@ -372,7 +378,7 @@ def main():
     )
 
     prodigy_lig.predict()
-    prodigy_lig.print_to_stdout()
+    prodigy_lig.print_prediction()
 
 if __name__ == "__main__":
     main()
