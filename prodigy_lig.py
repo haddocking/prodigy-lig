@@ -16,6 +16,44 @@ import argparse
 import subprocess
 
 
+class Prodigy_lig(object):
+    """Run the prodigy-lig calculations and store all the relevant output."""
+    def __init__(self, structure, chains, electrostatics, contact_exe='contact-chainID_allAtoms', cutoff=10.5):
+        """Initialise the Prodigy-lig instance."""
+        self.structure = structure
+        self.chains = chains
+        self.electrostatics = electrostatics
+        self.contact_exe = contact_exe
+        self.cutoff = cutoff
+        self.dg_score = None
+        self.dg_elec = None
+        self.dg = None
+        self.contact_counts = None
+
+    def predict(self):
+        """
+        API method used by the webserver
+        """
+        if electrostatics is None:
+            electrostatics = extract_electrostatics(structure)
+        atomic_contacts = calc_atomic_contacts(contact_exe, structure, cutoff)
+        filtered_atomic_contacts = filter_contacts_by_chain(atomic_contacts, chains)
+
+        if len(filtered_atomic_contacts) == 0:
+            raise RuntimeWarning(
+                "There are no contacts between the specified chains."
+                " Are you sure about their correctness?"
+            )
+
+        atomic_contact_counts = calculate_contact_counts(filtered_atomic_contacts)
+
+        score = calculate_score(atomic_contact_counts, electrostatics)
+        dg_elec = calculate_DG_electrostatics(atomic_contact_counts, electrostatics)
+        dg = calculate_DG(atomic_contact_counts)
+
+        return {'score': score, 'dg_elec': dg_elec, 'dg': dg}
+
+
 def extract_electrostatics(pdb_file):
     """
     Extracts the electrostatics energy from a HADDOCK PDB file.
@@ -238,28 +276,6 @@ def calculate_DG(contact_counts):
         intercept
     )
 
-def predict(structure , chains, electrostatics=None, contact_exe='contact-chainID_allAtoms', cutoff=10.5):
-    """
-    API method used by the webserver
-    """
-    if electrostatics is None:
-        electrostatics = extract_electrostatics(structure)
-    atomic_contacts = calc_atomic_contacts(contact_exe, structure, cutoff)
-    filtered_atomic_contacts = filter_contacts_by_chain(atomic_contacts, chains)
-
-    if len(filtered_atomic_contacts) == 0:
-        raise RuntimeWarning(
-            "There are no contacts between the specified chains."
-            " Are you sure about their correctness?"
-        )
-
-    atomic_contact_counts = calculate_contact_counts(filtered_atomic_contacts)
-
-    score = calculate_score(atomic_contact_counts, electrostatics)
-    dg_elec = calculate_DG_electrostatics(atomic_contact_counts, electrostatics)
-    dg = calculate_DG(atomic_contact_counts)
-
-    return {'score': score,'dg_elec': dg_elec,'dg': dg}
 
 def calculate_DG_electrostatics(contact_counts, electrostatics_energy):
     """
