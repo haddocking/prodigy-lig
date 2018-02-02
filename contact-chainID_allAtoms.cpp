@@ -1,6 +1,7 @@
 // calculate atom-atom contacts (both ATOM and HETATM are considered)
 #include <iostream>
 #include <fstream>
+#include <istream>
 #include <string>
 #include <sstream>
 //#include <cstdio>
@@ -37,24 +38,36 @@ vector<Atom> atoms;
 
 int main(int argc, char *argv[]) {
 
-  if (argc < 3) {
+  if (argc < 2) {
     fprintf(stderr,"ERROR: Too few arguments\n");
-    fprintf(stderr, "Usage: contact <pdb file> <cutoff>\n");
+    fprintf(stderr, "Usage: contact <pdb file> <cutoff> or cat <pdb file> | contact <cutoff> \n");
     return 1;
   }
 
   char *filename = argv[1];
-  float cutoff = atof(argv[2]); // distance cutoff
+  float cutoff = atof(argv[argc-1]); // distance cutoff
+
 
   if (cutoff < 0 || cutoff > 100) {
     fprintf(stderr,"ERROR: Cutoff out of range\n");
     fprintf(stderr, "Usage: contact <pdb file> <cutoff>\n");
     return 1;
   }
+ std::istream* in;
+ std::ifstream inFile;
 
+ if(argc==2)
+ {
+      in = &cin;
+ }
+ else
+ {
+      inFile.open(argv[1]);
+      in = &inFile;
+ }
   std::string line;
-  std::ifstream inputFL(filename);
-  while(std::getline(inputFL,line)){
+
+  while(std::getline(*in,line)){
 
       string label = line.substr(0,6);
 
