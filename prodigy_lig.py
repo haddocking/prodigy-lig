@@ -20,9 +20,10 @@ import subprocess
 
 class Prodigy_lig(object):
     """Run the prodigy-lig calculations and store all the relevant output."""
-    def __init__(self, structure, chains, electrostatics, contact_exe='contact-chainID_allAtoms', cutoff=10.5):
+    def __init__(self, structure, chains, electrostatics, filename='', contact_exe='contact-chainID_allAtoms', cutoff=10.5):
         """Initialise the Prodigy-lig instance."""
         self.structure = structure
+        self.filename = filename if filename else basename(self.structure.name)
         self.chains = chains
         self.electrostatics = electrostatics
         self.contact_exe = contact_exe
@@ -57,7 +58,7 @@ class Prodigy_lig(object):
     def as_dict(self):
         """Return the data of the class as a dictionary for the server."""
         return {
-            'structure': basename(self.structure.name),
+            'structure': self.filename,
             'chains': self.chains,
             'electrostatics': self.electrostatics,
             'cutoff': self.cutoff,
@@ -73,13 +74,12 @@ class Prodigy_lig(object):
         else:
             handle = sys.stdout
         """Print to the File or STDOUT if no filename is specified."""
-        fname = basename(self.structure.name)
         if self.electrostatics is not None:
             handle.write("{}\t{}\t{}\n".format("Job name", "DGprediction (Kcal/mol)", "DGscore"))
-            handle.write("{0}\t{1:.2f}\t{2:.2f}\n".format(fname, self.dg_elec, self.dg_score))
+            handle.write("{0}\t{1:.2f}\t{2:.2f}\n".format(self.filename, self.dg_elec, self.dg_score))
         else:
             handle.write("{}\t{}\n".format("Job name", "DGprediction (low refinement) (Kcal/mol)"))
-            handle.write("{0}\t{1:.2f}\n".format(fname, self.dg))
+            handle.write("{0}\t{1:.2f}\n".format(self.filename, self.dg))
         if handle is not sys.stdout:
             handle.close()
 
@@ -91,7 +91,10 @@ def extract_electrostatics(pdb_file):
     :param pdb_file: The input PDB file.
     :return: Electrostatics energy
     """
-    pdb_file.seek(0)
+    try:
+        pdb_file.seek(0)
+    except:
+        pass
     for line in pdb_file:
         if 'REMARK energies' in line:
             line = line.rstrip()
