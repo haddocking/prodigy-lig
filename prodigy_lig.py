@@ -375,14 +375,14 @@ def _parse_arguments():
 def main():
     """Run it."""
     args = _parse_arguments()
-
-    prodigy_lig = Prodigy_lig(
-        open(args.input_file,'r'),
-        args.chains,
-        args.electrostatics,
-        args.contact_exe,
-        args.distance_cutoff
-    )
+    with open(args.input_file) as in_file:
+        prodigy_lig = Prodigy_lig(
+            in_file,
+            args.chains,
+            args.electrostatics,
+            args.contact_exe,
+            args.distance_cutoff
+        )
 
     prodigy_lig.predict()
     prodigy_lig.print_prediction()
