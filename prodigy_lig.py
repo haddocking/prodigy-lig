@@ -12,7 +12,7 @@ Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt
 """
 
 from __future__ import print_function
-from os.path import basename,splitext
+from os.path import basename, splitext
 import sys
 import argparse
 from subprocess import Popen, PIPE
@@ -20,12 +20,12 @@ from StringIO import StringIO
 
 from Bio.PDB import PDBParser, FastMMCIFParser, PDBIO
 
-class Prodigy_lig(object):
+
+class ProdigyLig(object):
     """Run the prodigy-lig calculations and store all the relevant output."""
-    def __init__(self, structure, chains, electrostatics, filename='', contact_exe='contact-chainID_allAtoms', cutoff=10.5):
+    def __init__(self, structure, chains, electrostatics, contact_exe='contact-chainID_allAtoms', cutoff=10.5):
         """Initialise the Prodigy-lig instance."""
         self.structure = structure
-        self.filename = filename if filename else basename(self.structure.name)
         self.chains = chains
         self.electrostatics = electrostatics
         self.contact_exe = contact_exe
@@ -57,7 +57,7 @@ class Prodigy_lig(object):
     def as_dict(self):
         """Return the data of the class as a dictionary for the server."""
         return {
-            'structure': self.filename,
+            'structure': self.structure.id,
             'chains': self.chains,
             'electrostatics': self.electrostatics,
             'cutoff': self.cutoff,
@@ -75,10 +75,10 @@ class Prodigy_lig(object):
         """Print to the File or STDOUT if no filename is specified."""
         if self.electrostatics is not None:
             handle.write("{}\t{}\t{}\n".format("Job name", "DGprediction (Kcal/mol)", "DGscore"))
-            handle.write("{0}\t{1:.2f}\t{2:.2f}\n".format(self.filename, self.dg_elec, self.dg_score))
+            handle.write("{0}\t{1:.2f}\t{2:.2f}\n".format(self.structure.id, self.dg_elec, self.dg_score))
         else:
             handle.write("{}\t{}\n".format("Job name", "DGprediction (low refinement) (Kcal/mol)"))
-            handle.write("{0}\t{1:.2f}\n".format(self.filename, self.dg))
+            handle.write("{0}\t{1:.2f}\n".format(self.structure.id, self.dg))
         if handle is not sys.stdout:
             handle.close()
 
@@ -104,7 +104,7 @@ def extract_electrostatics(pdb_file):
     # try to reset file handle for further processing
     try:
         pdb_file.seek(0)
-    except:
+    except Exception:
         pass
     return electrostatics
 
@@ -137,7 +137,6 @@ def calc_atomic_contacts(contact_executable, pdb_file, cutoff=10.5):
     p.stdin.close()
     atomic_contacts = p.stdout.readlines()
 
-    #atomic_contacts = atomic_contacts.split('\n')
     del atomic_contacts[-1]
 
     return atomic_contacts
@@ -384,6 +383,7 @@ def main():
     """Run it."""
     args = _parse_arguments()
     fname, s_ext = splitext(basename(args.input_file))
+    parser = None
     if s_ext in {'.pdb', '.ent'}:
         parser = PDBParser(QUIET=1)
     elif s_ext == ".cif":
@@ -394,17 +394,17 @@ def main():
         electrostatics = args.electrostatics \
             if args.electrostatics or s_ext == '.cif' \
             else extract_electrostatics(in_file)
-        prodigy_lig = Prodigy_lig(
-            parser.get_structure('pdb',in_file),
-            filename=fname,
-            chains = args.chains,
-            electrostatics = electrostatics,
-            contact_exe = args.contact_exe,
-            cutoff = args.distance_cutoff
+        prodigy_lig = ProdigyLig(
+            parser.get_structure(fname, in_file),
+            chains=args.chains,
+            electrostatics=electrostatics,
+            contact_exe=args.contact_exe,
+            cutoff=args.distance_cutoff
         )
 
     prodigy_lig.predict()
     prodigy_lig.print_prediction()
+
 
 if __name__ == "__main__":
     main()
