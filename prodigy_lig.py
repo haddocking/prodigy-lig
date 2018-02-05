@@ -12,6 +12,7 @@ Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt
 """
 
 from __future__ import print_function
+from os.path import basename
 import sys
 import argparse
 import subprocess
@@ -19,9 +20,10 @@ import subprocess
 
 class Prodigy_lig(object):
     """Run the prodigy-lig calculations and store all the relevant output."""
-    def __init__(self, structure, chains, electrostatics, contact_exe='contact-chainID_allAtoms', cutoff=10.5):
+    def __init__(self, structure, chains, electrostatics, filename='', contact_exe='contact-chainID_allAtoms', cutoff=10.5):
         """Initialise the Prodigy-lig instance."""
         self.structure = structure
+        self.filename = filename if filename else basename(self.structure.name)
         self.chains = chains
         self.electrostatics = electrostatics
         self.contact_exe = contact_exe
@@ -47,6 +49,7 @@ class Prodigy_lig(object):
 
         if self.electrostatics is None:
             self.electrostatics = extract_electrostatics(self.structure)
+
         if self.electrostatics is not None:
             self.dg_score = calculate_score(self.contact_counts, self.electrostatics)
             self.dg_elec = calculate_DG_electrostatics(self.contact_counts, self.electrostatics)
@@ -55,7 +58,7 @@ class Prodigy_lig(object):
     def as_dict(self):
         """Return the data of the class as a dictionary for the server."""
         return {
-            'structure': self.structure,
+            'structure': self.filename,
             'chains': self.chains,
             'electrostatics': self.electrostatics,
             'cutoff': self.cutoff,
@@ -73,10 +76,10 @@ class Prodigy_lig(object):
         """Print to the File or STDOUT if no filename is specified."""
         if self.electrostatics is not None:
             handle.write("{}\t{}\t{}\n".format("Job name", "DGprediction (Kcal/mol)", "DGscore"))
-            handle.write("{0}\t{1:.2f}\t{2:.2f}\n".format(self.structure, self.dg_elec, self.dg_score))
+            handle.write("{0}\t{1:.2f}\t{2:.2f}\n".format(self.filename, self.dg_elec, self.dg_score))
         else:
             handle.write("{}\t{}\n".format("Job name", "DGprediction (low refinement) (Kcal/mol)"))
-            handle.write("{0}\t{1:.2f}\n".format(self.structure, self.dg))
+            handle.write("{0}\t{1:.2f}\n".format(self.filename, self.dg))
         if handle is not sys.stdout:
             handle.close()
 
@@ -88,14 +91,16 @@ def extract_electrostatics(pdb_file):
     :param pdb_file: The input PDB file.
     :return: Electrostatics energy
     """
-    energies = None
-    with open(pdb_file) as in_file:
-        for line in in_file:
-            if 'REMARK energies' in line:
-                line = line.rstrip()
-                line = line.replace('REMARK energies: ', '')
-                energies = line.split(',')
-                return float(energies[6])
+    try:
+        pdb_file.seek(0)
+    except:
+        pass
+    for line in pdb_file:
+        if 'REMARK energies' in line:
+            line = line.rstrip()
+            line = line.replace('REMARK energies: ', '')
+            energies = line.split(',')
+            return float(energies[6])
 
     return None
 
@@ -110,8 +115,8 @@ def calc_atomic_contacts(contact_executable, pdb_file, cutoff=10.5):
 
     :param contact_executable: Path to the all-atom contact script
     :type contact_executable: str or unicode
-    :param pdb_file: Path to the PDB file to calculate contacts for
-    :type pdb_file: str or unicode
+    :param pdb_file: file handle to calculate contacts for
+    :type pdb_file: file handle
     :param cutoff: The cutoff to use for the AC calculation
     :type cutoff: float
     :return: Str of atomic contacts
@@ -119,9 +124,10 @@ def calc_atomic_contacts(contact_executable, pdb_file, cutoff=10.5):
 
     atomic_contacts = subprocess.check_output([
         contact_executable,
-        pdb_file,
         str(cutoff)
-    ])
+        ],
+        stdin=pdb_file
+    )
 
     atomic_contacts = atomic_contacts.split('\n')
     del atomic_contacts[-1]
@@ -369,14 +375,14 @@ def _parse_arguments():
 def main():
     """Run it."""
     args = _parse_arguments()
-
-    prodigy_lig = Prodigy_lig(
-        args.input_file,
-        args.chains,
-        args.electrostatics,
-        args.contact_exe,
-        args.distance_cutoff
-    )
+    with open(args.input_file) as in_file:
+        prodigy_lig = Prodigy_lig(
+            in_file,
+            args.chains,
+            args.electrostatics,
+            args.contact_exe,
+            args.distance_cutoff
+        )
 
     prodigy_lig.predict()
     prodigy_lig.print_prediction()
