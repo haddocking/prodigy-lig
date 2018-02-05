@@ -12,11 +12,13 @@ Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt
 """
 
 from __future__ import print_function
-from os.path import basename
+from os.path import basename,splitext
 import sys
 import argparse
-import subprocess
+from subprocess import Popen, PIPE
+from StringIO import StringIO
 
+from Bio.PDB import PDBParser, FastMMCIFParser, PDBIO
 
 class Prodigy_lig(object):
     """Run the prodigy-lig calculations and store all the relevant output."""
@@ -46,9 +48,6 @@ class Prodigy_lig(object):
             )
 
         self.contact_counts = calculate_contact_counts(filtered_atomic_contacts)
-
-        if self.electrostatics is None:
-            self.electrostatics = extract_electrostatics(self.structure)
 
         if self.electrostatics is not None:
             self.dg_score = calculate_score(self.contact_counts, self.electrostatics)
@@ -91,18 +90,23 @@ def extract_electrostatics(pdb_file):
     :param pdb_file: The input PDB file.
     :return: Electrostatics energy
     """
+    electrostatics = None
+    for line in pdb_file:
+        # scan for Haddock energies line and assign electrostatics
+        if line.startswith('REMARK energies'):
+            line = line.rstrip()
+            line = line.replace('REMARK energies: ', '')
+            electrostatics = float(line.split(',')[6])
+            break
+        # stop on first ATOM Line as remarks should be beforehand
+        elif line.startswith('ATOM'):
+            break
+    # try to reset file handle for further processing
     try:
         pdb_file.seek(0)
     except:
         pass
-    for line in pdb_file:
-        if 'REMARK energies' in line:
-            line = line.rstrip()
-            line = line.replace('REMARK energies: ', '')
-            energies = line.split(',')
-            return float(energies[6])
-
-    return None
+    return electrostatics
 
 
 def calc_atomic_contacts(contact_executable, pdb_file, cutoff=10.5):
@@ -115,21 +119,25 @@ def calc_atomic_contacts(contact_executable, pdb_file, cutoff=10.5):
 
     :param contact_executable: Path to the all-atom contact script
     :type contact_executable: str or unicode
-    :param pdb_file: file handle to calculate contacts for
-    :type pdb_file: file handle
+    :param pdb_file: The structure object
+    :type pdb_file: Bio.PDB structure object
     :param cutoff: The cutoff to use for the AC calculation
     :type cutoff: float
     :return: Str of atomic contacts
     """
+    io = PDBIO()
+    io.set_structure(pdb_file)
+    io_stream = StringIO()
+    io.save(io_stream)
+    io_stream.seek(0)
 
-    atomic_contacts = subprocess.check_output([
-        contact_executable,
-        str(cutoff)
-        ],
-        stdin=pdb_file
-    )
+    p = Popen([contact_executable, str(cutoff)], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    for line in io_stream:
+        p.stdin.write(line)
+    p.stdin.close()
+    atomic_contacts = p.stdout.readlines()
 
-    atomic_contacts = atomic_contacts.split('\n')
+    #atomic_contacts = atomic_contacts.split('\n')
     del atomic_contacts[-1]
 
     return atomic_contacts
@@ -350,7 +358,7 @@ def _parse_arguments():
         '-i',
         '--input_file',
         required=True,
-        help='This is the PDB file for which the score will be calculated.'
+        help='This is the PDB/mmcif file for which the score will be calculated.'
     )
     parser.add_argument(
         '-e',
@@ -375,13 +383,24 @@ def _parse_arguments():
 def main():
     """Run it."""
     args = _parse_arguments()
+    fname, s_ext = splitext(basename(args.input_file))
+    if s_ext in {'.pdb', '.ent'}:
+        parser = PDBParser(QUIET=1)
+    elif s_ext == ".cif":
+        parser = FastMMCIFParser(QUIET=1)
+
     with open(args.input_file) as in_file:
+        # try to set electrostatics from input file if not provided by user
+        electrostatics = args.electrostatics \
+            if args.electrostatics or s_ext == '.cif' \
+            else extract_electrostatics(in_file)
         prodigy_lig = Prodigy_lig(
-            in_file,
-            args.chains,
-            args.electrostatics,
-            args.contact_exe,
-            args.distance_cutoff
+            parser.get_structure('pdb',in_file),
+            filename=fname,
+            chains = args.chains,
+            electrostatics = electrostatics,
+            contact_exe = args.contact_exe,
+            cutoff = args.distance_cutoff
         )
 
     prodigy_lig.predict()
