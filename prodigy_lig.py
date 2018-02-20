@@ -15,6 +15,7 @@ from __future__ import print_function
 from os.path import basename, splitext
 import sys
 import argparse
+import string
 from subprocess import Popen, PIPE
 from StringIO import StringIO
 
@@ -26,7 +27,7 @@ class ProdigyLig(object):
     def __init__(self, structure, chains, electrostatics, contact_exe='contact-chainID_allAtoms', cutoff=10.5):
         """Initialise the Prodigy-lig instance."""
         self.structure = structure
-        self.chains = chains
+        self.chains = self._parse_chains(chains)
         self.electrostatics = electrostatics
         self.contact_exe = contact_exe
         self.cutoff = cutoff
@@ -66,6 +67,60 @@ class ProdigyLig(object):
             'dg': self.dg,
             'contact_counts': self.contact_counts
         }
+
+    @staticmethod
+    def _parse_chains(chains):
+        """
+        Parse the chain and return a list of lists.
+
+        The chains specification allows for one chain per interactor or more. If more
+        than one chains per interactor are specified split on ',' and return the chains
+        as a list.
+        """
+        def validate_chain_string(chain_string):
+            """
+            Check the chain string for any character other than letters and commas.
+            """
+            chain_string = chain_string.upper()
+            try:
+                chain_string.decode("ascii")
+            except UnicodeDecodeError:
+                raise RuntimeError(
+                    "Please use uppercase ASCII characters [ A-Z ]."
+                )
+
+            if len(chain_string) == 1:
+                if chain_string not in string.uppercase:
+                    raise RuntimeError(
+                        "Please use standard chain identifiers [ A-Z ]."
+                    )
+            else:
+                for char in chain_string:
+                    if char not in string.uppercase and char != ",":
+                        raise RuntimeError(
+                            "Use uppercase ASCII characters [ A-Z ] to speciy the"
+                            " chains and , to separate them."
+                        )
+
+                # Make sure that "A," or "A,B," didn't slip through
+                comma_count = chain_string.count(",")
+                chain_count = len(set(chain_string).intersection(string.uppercase))
+
+                if comma_count != chain_count -1:
+                    raise RuntimeError(
+                        "Specify multiple chains like this: prodigy_lig.py -c A,B C"
+                    )
+
+            return chain_string
+
+        parsed_chains = []
+        for chain in chains:
+            try:
+                chain = validate_chain_string(chain)
+                parsed_chains.append(chain.split(","))
+            except RuntimeError:
+                raise
+        return parsed_chains
 
     def print_prediction(self, outfile=''):
         if outfile:
@@ -206,17 +261,14 @@ def filter_contacts_by_chain(contacts, chains):
     """
     filtered_contacts = []
 
-    for idx, chain in enumerate(chains):
-        chains[idx] = chain.upper()
-
     for contact in contacts:
         words = contact.split()
         chain1 = words[1].upper()
         chain2 = words[5].upper()
 
         chains_are_acceptable = (
-            (chain1 == chains[0] and chain2 == chains[1]) or
-            (chain1 == chains[1] and chain2 == chains[0])
+            (chain1 in chains[0] and chain2 in chains[1]) or
+            (chain1 in chains[1] and chain2 in chains[0])
         )
 
         if chains_are_acceptable:
