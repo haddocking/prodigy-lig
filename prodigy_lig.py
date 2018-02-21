@@ -403,7 +403,12 @@ def _parse_arguments():
         '--chains',
         required=True,
         nargs=2,
-        help='Which chains to use.'
+        help=(
+            'Which chains to use. You can specify multi-chain selections'
+            ' by comma separating the chain identifiers (e.g. -c A,B C,D).'
+            ' In that case only contacts between chains A - C+D and B - C+D'
+            ' will be considered.'
+        )
     )
     parser.add_argument(
         '-i',
