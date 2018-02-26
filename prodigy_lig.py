@@ -40,15 +40,19 @@ class ProdigyLig(object):
         """
         API method used by the webserver
         """
-        atomic_contacts = calc_atomic_contacts(self.contact_exe, self.structure, self.cutoff)
-        filtered_atomic_contacts = filter_contacts_by_chain(atomic_contacts, self.chains)
+        # Python distance
+        atomic_contacts = python_contact(self.structure, self.chains, self.cutoff)
+        self.contact_counts = calculate_contact_counts(atomic_contacts)
 
-        if len(filtered_atomic_contacts) == 0:
-            raise RuntimeWarning(
-                "There are no contacts between the specified chains."
-            )
+        # C++ distance
+        # atomic_contacts = calc_atomic_contacts(self.contact_exe, self.structure, self.cutoff)
+        # filtered_atomic_contacts = filter_contacts_by_chain(atomic_contacts, self.chains)
+        # if len(filtered_atomic_contacts) == 0:
+        #     raise RuntimeWarning(
+        #         "There are no contacts between the specified chains."
+        #     )
 
-        self.contact_counts = calculate_contact_counts(filtered_atomic_contacts)
+        # self.contact_counts = calculate_contact_counts(filtered_atomic_contacts)
 
         if self.electrostatics is not None:
             self.dg_score = calculate_score(self.contact_counts, self.electrostatics)
@@ -195,6 +199,96 @@ def calc_atomic_contacts(contact_executable, pdb_file, cutoff=10.5):
     del atomic_contacts[-1]
 
     return atomic_contacts
+
+
+def process_coord_line(line):
+    """
+    Bundle every atom along with its coordinates in a dictionary.
+
+    :param line: A PDB formatted coordinate line
+    :return: dict of all the coordinates
+    """
+    coord_line = (
+        line.startswith("ATOM") or line.startswith("HETATM")
+    )
+    if coord_line:
+        return {
+            "chain": line[21],
+            "resid": line[22:26].strip(),
+            "name": line[12:16].strip(),
+            "resname": line[17:20].strip(),
+            "coords": {
+                "x": float(line[30:38]),
+                "y": float(line[38:46]),
+                "z": float(line[46:54])
+            }
+        }
+    else:
+        return None
+
+
+def python_contact(structure, chains, cutoff):
+    """
+    Calculate the contacts without calling out to the CPP code.
+
+    :param structure: Biopython structure object of the input file
+    :return: List of contacts
+    """
+    io = PDBIO()
+    io.set_structure(structure)
+    io_stream = StringIO()
+    io.save(io_stream)
+    io_stream.seek(0)
+
+    struc = {}
+    for line in io_stream:
+        coord_line = process_coord_line(line)
+        if coord_line:
+            chain = coord_line["chain"]
+            resid = coord_line["resid"]
+            name = coord_line["name"]
+            resname = coord_line["resname"]
+            coords = coord_line["coords"]
+
+            full_name = "{}_{}_{}".format(resname, resid, name)
+
+            if chain not in struc:
+                struc[chain] = {}
+            struc[chain][full_name] = coords
+
+    contacts = []
+    for ref_chain in chains[0]:
+        for mob_chain in chains[1]:
+            for ref_atom in struc[ref_chain]:
+                for mob_atom in struc[mob_chain]:
+                    ref_coords = struc[ref_chain][ref_atom]
+                    mob_coords = struc[mob_chain][mob_atom]
+
+                    dist = calc_dist(ref_coords, mob_coords)
+                    if dist <= cutoff:
+                        contacts.append("\t".join([
+                            ref_atom.split("_")[2],
+                            ref_atom.split("_")[2],
+                            ref_atom.split("_")[2],
+                            ref_atom.split("_")[2],
+                            mob_atom.split("_")[2],
+                            mob_atom.split("_")[2],
+                            mob_atom.split("_")[2],
+                            mob_atom.split("_")[2],
+                            str(dist)
+                        ]))
+
+    return contacts
+
+def calc_dist(coords_1, coords_2):
+    """Calculate euclidean distance in 3D space."""
+    dist = (
+        (coords_1["x"] - coords_2["x"]) ** 2 +
+        (coords_1["y"] - coords_2["y"]) ** 2 +
+        (coords_1["z"] - coords_2["z"]) ** 2
+    ) ** 0.5
+
+    return dist
 
 
 def _classify_atom(atom):
