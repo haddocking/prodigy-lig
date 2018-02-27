@@ -18,18 +18,19 @@ import argparse
 import string
 from subprocess import Popen, PIPE
 from StringIO import StringIO
+from collections import namedtuple
 
 from Bio.PDB import PDBParser, FastMMCIFParser, PDBIO
 
 
 class ProdigyLig(object):
     """Run the prodigy-lig calculations and store all the relevant output."""
-    def __init__(self, structure, chains, electrostatics, contact_exe='contact-chainID_allAtoms', cutoff=10.5):
+    def __init__(self, structure, chains, electrostatics, cpp_contacts, cutoff=10.5):
         """Initialise the Prodigy-lig instance."""
         self.structure = structure
         self.chains = self._parse_chains(chains)
         self.electrostatics = electrostatics
-        self.contact_exe = contact_exe
+        self.cpp_contacts = cpp_contacts
         self.cutoff = cutoff
         self.dg_score = None
         self.dg_elec = None
@@ -40,19 +41,18 @@ class ProdigyLig(object):
         """
         API method used by the webserver
         """
-        # Python distance
-        atomic_contacts = python_contact(self.structure, self.chains, self.cutoff)
+        if self.cpp_contacts is not None:
+            self.cpp_contacts = self.cpp_contacts[0]
+            atomic_contacts = calc_atomic_contacts_cpp(self.cpp_contacts, self.structure, self.chains, self.cutoff)
+        else:
+            atomic_contacts = calc_atomic_contacts_python(self.structure, self.chains, self.cutoff)
+
+        if len(atomic_contacts) == 0:
+            raise RuntimeWarning(
+                "There are no contacts between the specified chains."
+            )
+
         self.contact_counts = calculate_contact_counts(atomic_contacts)
-
-        # C++ distance
-        # atomic_contacts = calc_atomic_contacts(self.contact_exe, self.structure, self.cutoff)
-        # filtered_atomic_contacts = filter_contacts_by_chain(atomic_contacts, self.chains)
-        # if len(filtered_atomic_contacts) == 0:
-        #     raise RuntimeWarning(
-        #         "There are no contacts between the specified chains."
-        #     )
-
-        # self.contact_counts = calculate_contact_counts(filtered_atomic_contacts)
 
         if self.electrostatics is not None:
             self.dg_score = calculate_score(self.contact_counts, self.electrostatics)
@@ -168,7 +168,7 @@ def extract_electrostatics(pdb_file):
     return electrostatics
 
 
-def calc_atomic_contacts(contact_executable, pdb_file, cutoff=10.5):
+def calc_atomic_contacts_cpp(contact_executable, pdb_file, chains, cutoff=10.5):
     """
     Calculate atomic contacts.
 
@@ -184,6 +184,27 @@ def calc_atomic_contacts(contact_executable, pdb_file, cutoff=10.5):
     :type cutoff: float
     :return: Str of atomic contacts
     """
+    def _filter_contacts_by_chain(contacts, chains):
+        """
+        Filter the contacts using only the chains specified during runtime.
+        """
+        filtered_contacts = []
+
+        for contact in contacts:
+            words = contact.split()
+            chain1 = words[1].upper()
+            chain2 = words[5].upper()
+
+            chains_are_acceptable = (
+                (chain1 in chains[0] and chain2 in chains[1]) or
+                (chain1 in chains[1] and chain2 in chains[0])
+            )
+
+            if chains_are_acceptable:
+                filtered_contacts.append(contact)
+
+        return filtered_contacts
+
     io = PDBIO()
     io.set_structure(pdb_file)
     io_stream = StringIO()
@@ -198,177 +219,106 @@ def calc_atomic_contacts(contact_executable, pdb_file, cutoff=10.5):
 
     del atomic_contacts[-1]
 
-    return atomic_contacts
+    return _filter_contacts_by_chain(atomic_contacts, chains)
 
 
-def process_coord_line(line):
-    """
-    Bundle every atom along with its coordinates in a dictionary.
-
-    :param line: A PDB formatted coordinate line
-    :return: dict of all the coordinates
-    """
-    coord_line = (
-        line.startswith("ATOM") or line.startswith("HETATM")
-    )
-    if coord_line:
-        return {
-            "chain": line[21],
-            "resid": line[22:26].strip(),
-            "name": line[12:16].strip(),
-            "resname": line[17:20].strip(),
-            "coords": {
-                "x": float(line[30:38]),
-                "y": float(line[38:46]),
-                "z": float(line[46:54])
-            }
-        }
-    else:
-        return None
-
-
-def python_contact(structure, chains, cutoff):
+def calc_atomic_contacts_python(structure, chains, cutoff=10.5):
     """
     Calculate the contacts without calling out to the CPP code.
 
     :param structure: Biopython structure object of the input file
     :return: List of contacts
     """
+    def _process_coord_line(line):
+        """
+        Bundle every atom along with its coordinates in a dictionary.
+
+        :param line: A PDB formatted coordinate line
+        :return: dict of all the coordinates
+        """
+        coord_line = (
+            line.startswith("ATOM") or line.startswith("HETATM")
+        )
+        if coord_line:
+            return {
+                "chain": line[21],
+                "resid": line[22:26].strip(),
+                "name": line[12:16].strip(),
+                "resname": line[17:20].strip(),
+                "coords": {
+                    "x": float(line[30:38]),
+                    "y": float(line[38:46]),
+                    "z": float(line[46:54])
+                }
+            }
+        else:
+            return None
+
+    def _calc_dist(coords_1, coords_2):
+        """Calculate euclidean distance in 3D space."""
+        dist = (
+            (coords_1.coords_x - coords_2.coords_x) ** 2 +
+            (coords_1.coords_y - coords_2.coords_y) ** 2 +
+            (coords_1.coords_z - coords_2.coords_z) ** 2
+        ) ** 0.5
+
+        return dist
+
+    coordinates = [[], []]
+    flattened_chains = []
+    for group in chains:
+        for chain in group:
+            flattened_chains.append(chain)
+
+    coord_object = namedtuple("atom", ["fullname", "coords_x", "coords_y", "coords_z"])
+
     io = PDBIO()
     io.set_structure(structure)
     io_stream = StringIO()
     io.save(io_stream)
     io_stream.seek(0)
 
-    struc = {}
     for line in io_stream:
-        coord_line = process_coord_line(line)
+        coord_line = _process_coord_line(line)
         if coord_line:
             chain = coord_line["chain"]
-            resid = coord_line["resid"]
-            name = coord_line["name"]
-            resname = coord_line["resname"]
-            coords = coord_line["coords"]
+            full_name = "{}_{}_{}_{}".format(
+                coord_line["resname"],
+                coord_line["resid"],
+                coord_line["name"],
+                coord_line["chain"]
+            )
 
-            full_name = "{}_{}_{}".format(resname, resid, name)
-
-            if chain not in struc:
-                struc[chain] = {}
-            struc[chain][full_name] = coords
-
+            # Make sure that the chain that is being read is part of the specified chains.
+            if chain in flattened_chains:
+                chain_index = [chain in group for group in chains].index(True)
+                coordinates[chain_index].append(
+                    coord_object(
+                        full_name,
+                        coord_line["coords"]["x"],
+                        coord_line["coords"]["y"],
+                        coord_line["coords"]["z"]
+                    )
+                )
+    
     contacts = []
-    for ref_chain in chains[0]:
-        for mob_chain in chains[1]:
-            for ref_atom in struc[ref_chain]:
-                for mob_atom in struc[mob_chain]:
-                    ref_coords = struc[ref_chain][ref_atom]
-                    mob_coords = struc[mob_chain][mob_atom]
-
-                    dist = calc_dist(ref_coords, mob_coords)
-                    if dist <= cutoff:
-                        contacts.append("\t".join([
-                            ref_atom.split("_")[2],
-                            ref_atom.split("_")[2],
-                            ref_atom.split("_")[2],
-                            ref_atom.split("_")[2],
-                            mob_atom.split("_")[2],
-                            mob_atom.split("_")[2],
-                            mob_atom.split("_")[2],
-                            mob_atom.split("_")[2],
-                            str(dist)
-                        ]))
+    for ref_atom in coordinates[0]:
+        for mob_atom in coordinates[1]:
+            dist = _calc_dist(ref_atom, mob_atom)
+            if dist <= cutoff:
+                contacts.append("\t".join([
+                    ref_atom.fullname.split("_")[0],
+                    ref_atom.fullname.split("_")[3],
+                    ref_atom.fullname.split("_")[1],
+                    ref_atom.fullname.split("_")[2],
+                    mob_atom.fullname.split("_")[0],
+                    mob_atom.fullname.split("_")[3],
+                    mob_atom.fullname.split("_")[1],
+                    mob_atom.fullname.split("_")[2],
+                    str(dist)
+                ]))
 
     return contacts
-
-def calc_dist(coords_1, coords_2):
-    """Calculate euclidean distance in 3D space."""
-    dist = (
-        (coords_1["x"] - coords_2["x"]) ** 2 +
-        (coords_1["y"] - coords_2["y"]) ** 2 +
-        (coords_1["z"] - coords_2["z"]) ** 2
-    ) ** 0.5
-
-    return dist
-
-
-def _classify_atom(atom):
-    """
-    Classify the atom involved in the interaction in one of the categories
-    laid out in calculate_atomic_contacts.
-
-    :param atom: The atom involved in the interaction
-    :return: Atom type. One of C, N, O, X
-    """
-    if atom.startswith('C') and not atom.startswith('CL'):
-        return 'C'
-    elif atom.startswith('O'):
-        return 'O'
-    elif atom.startswith('N'):
-        return 'N'
-    elif not (
-        atom.startswith('C') or
-        atom.startswith('N') or
-        atom.startswith('O')
-    ) or atom.startswith('CL'):
-        return 'X'
-
-    return None
-
-
-def _classify_contact(atom_classes):
-    """
-    Classify the contact in one of the categories defined in the function
-    calculate_atomic_contact_counts.
-
-    :param atom_classes: Class of the atoms involved in the interaction
-    :type atom_classes: List of length 2
-    :return: One of CC, NN, OO, XX, CN, CO, CX, NO, NX, OX
-    """
-    atom_1, atom_2 = atom_classes
-    if atom_1 == 'C' and atom_2 == 'C':
-        return 'CC'
-    elif (atom_1 == 'C' and atom_2 == 'N') or (atom_1 == 'N' and atom_2 == 'C'):
-        return 'CN'
-    elif (atom_1 == 'C' and atom_2 == 'O') or (atom_1 == 'O' and atom_2 == 'C'):
-        return 'CO'
-    elif (atom_1 == 'C' and atom_2 == 'X') or (atom_1 == 'X' and atom_2 == 'C'):
-        return 'CX'
-    elif (atom_1 == 'N' and atom_2 == 'N') or (atom_1 == 'N' and atom_2 == 'N'):
-        return 'NN'
-    elif (atom_1 == 'N' and atom_2 == 'O') or (atom_1 == 'O' and atom_2 == 'N'):
-        return 'NO'
-    elif (atom_1 == 'N' and atom_2 == 'X') or (atom_1 == 'X' and atom_2 == 'N'):
-        return 'NX'
-    elif (atom_1 == 'O' and atom_2 == 'O') or (atom_1 == 'O' and atom_2 == 'O'):
-        return 'OO'
-    elif (atom_1 == 'O' and atom_2 == 'X') or (atom_1 == 'X' and atom_2 == 'O'):
-        return 'OX'
-    elif (atom_1 == 'X' and atom_2 == 'X') or (atom_1 == 'X' and atom_2 == 'X'):
-        return 'XX'
-    else:
-        return None
-
-
-def filter_contacts_by_chain(contacts, chains):
-    """
-    Filter the contacts using only the chains specified during runtime.
-    """
-    filtered_contacts = []
-
-    for contact in contacts:
-        words = contact.split()
-        chain1 = words[1].upper()
-        chain2 = words[5].upper()
-
-        chains_are_acceptable = (
-            (chain1 in chains[0] and chain2 in chains[1]) or
-            (chain1 in chains[1] and chain2 in chains[0])
-        )
-
-        if chains_are_acceptable:
-            filtered_contacts.append(contact)
-
-    return filtered_contacts
 
 
 def calculate_contact_counts(contacts):
@@ -383,9 +333,65 @@ def calculate_contact_counts(contacts):
 
     and the combinations: CN, CO, CX, NO, NX, OX
 
-    :param contacts: The output of calc_atomic_contacts
+    :param contacts: The output of the calc_atomic_contacts functions
     :return: dict of the counts of each category defined above
     """
+    def _classify_atom(atom):
+        """
+        Classify the atom involved in the interaction in one of the categories
+        laid out in calculate_atomic_contacts.
+
+        :param atom: The atom involved in the interaction
+        :return: Atom type. One of C, N, O, X
+        """
+        if atom.startswith('C') and not atom.startswith('CL'):
+            return 'C'
+        elif atom.startswith('O'):
+            return 'O'
+        elif atom.startswith('N'):
+            return 'N'
+        elif not (
+            atom.startswith('C') or
+            atom.startswith('N') or
+            atom.startswith('O')
+        ) or atom.startswith('CL'):
+            return 'X'
+
+        return None
+
+    def _classify_contact(atom_classes):
+        """
+        Classify the contact in one of the categories defined in the function
+        calculate_atomic_contact_counts.
+
+        :param atom_classes: Class of the atoms involved in the interaction
+        :type atom_classes: List of length 2
+        :return: One of CC, NN, OO, XX, CN, CO, CX, NO, NX, OX
+        """
+        atom_1, atom_2 = atom_classes
+        if atom_1 == 'C' and atom_2 == 'C':
+            return 'CC'
+        elif (atom_1 == 'C' and atom_2 == 'N') or (atom_1 == 'N' and atom_2 == 'C'):
+            return 'CN'
+        elif (atom_1 == 'C' and atom_2 == 'O') or (atom_1 == 'O' and atom_2 == 'C'):
+            return 'CO'
+        elif (atom_1 == 'C' and atom_2 == 'X') or (atom_1 == 'X' and atom_2 == 'C'):
+            return 'CX'
+        elif (atom_1 == 'N' and atom_2 == 'N') or (atom_1 == 'N' and atom_2 == 'N'):
+            return 'NN'
+        elif (atom_1 == 'N' and atom_2 == 'O') or (atom_1 == 'O' and atom_2 == 'N'):
+            return 'NO'
+        elif (atom_1 == 'N' and atom_2 == 'X') or (atom_1 == 'X' and atom_2 == 'N'):
+            return 'NX'
+        elif (atom_1 == 'O' and atom_2 == 'O') or (atom_1 == 'O' and atom_2 == 'O'):
+            return 'OO'
+        elif (atom_1 == 'O' and atom_2 == 'X') or (atom_1 == 'X' and atom_2 == 'O'):
+            return 'OX'
+        elif (atom_1 == 'X' and atom_2 == 'X') or (atom_1 == 'X' and atom_2 == 'X'):
+            return 'XX'
+        else:
+            return None
+
     counts = {
         'CC': 0,
         'NN': 0,
@@ -487,10 +493,15 @@ def _parse_arguments():
     parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument(
-        '--contact_exe',
+        '--cpp_contacts',
         required=False,
-        default='contact-chainID_allAtoms',
-        help='Path to the all-atom contact script.'
+        nargs=1,
+        help=(
+            'Path to the all-atom contact script. By default prodigy_lig.py'
+            ' will calculate the distances using a built-in implementation. In'
+            ' some cases there might be a speed-up when using external compiled'
+            ' code.'
+        )
     )
     parser.add_argument(
         '-c',
@@ -549,7 +560,7 @@ def main():
             parser.get_structure(fname, in_file),
             chains=args.chains,
             electrostatics=electrostatics,
-            contact_exe=args.contact_exe,
+            cpp_contacts=args.cpp_contacts,
             cutoff=args.distance_cutoff
         )
 
