@@ -249,11 +249,11 @@ def calc_atomic_contacts_python(structure, chains, cutoff=10.5):
                             protein_atom.parent.resname,
                             protein_atom.parent.parent.id,
                             str(protein_atom.parent.id[1]),
-                            protein_atom.name,
+                            protein_atom.element,
                             ligand_atom.parent.resname,
                             ligand_atom.parent.parent.id,
                             str(ligand_atom.parent.id[1]),
-                            ligand_atom.name,
+                            ligand_atom.element,
                             str(dist)
                         ]))
 
@@ -283,17 +283,9 @@ def calculate_contact_counts(contacts):
         :param atom: The atom involved in the interaction
         :return: Atom type. One of C, N, O, X
         """
-        if atom.startswith('C') and not atom.startswith('CL'):
-            return 'C'
-        elif atom.startswith('O'):
-            return 'O'
-        elif atom.startswith('N'):
-            return 'N'
-        elif not (
-            atom.startswith('C') or
-            atom.startswith('N') or
-            atom.startswith('O')
-        ) or atom.startswith('CL'):
+        if atom == 'C' or atom == 'N' or atom == 'O':
+            return atom
+        else:
             return 'X'
 
         return None
@@ -344,6 +336,8 @@ def calculate_contact_counts(contacts):
         'OX': 0
     }
 
+    allowed_atoms = set(['C', 'N', 'O', 'F', 'CL', 'BR', 'S', 'P'])
+
     for line in contacts:
         if len(line) == 0:
             continue
@@ -351,6 +345,9 @@ def calculate_contact_counts(contacts):
 
         atom_name_1 = words[3]
         atom_name_2 = words[7]
+
+        if not (atom_name_1 in allowed_atoms and atom_name_2 in allowed_atoms):
+            continue
 
         atom_class_1 = _classify_atom(atom_name_1)
         atom_class_2 = _classify_atom(atom_name_2)
