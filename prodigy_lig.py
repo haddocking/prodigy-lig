@@ -72,6 +72,26 @@ class ProdigyLig(object):
             'contact_counts': self.contact_counts
         }
 
+    def _clean_structure(self):
+        """
+        Remove all the unnecessary elements from the structure.
+
+        Water molecules, ions and cofactors need to be removed from the structure
+        because otherwise their presence might affect the algorithm. In the case
+        of multi-model structures we are only keeping the first model.
+        """
+        structure = self.structure[0]
+
+        specified_chains = [chain for group in self.chains for chain in group]
+        structure_chains = list(self.structure.get_chains())
+
+        for chain in specified_chains:
+            if chain not in structure_chains:
+                raise RuntimeWarning(
+                    "Chain {} specified during runtime wasn't found in "
+                    "the structure".format(chain)
+                )
+
     @staticmethod
     def _parse_chains(chains):
         """
