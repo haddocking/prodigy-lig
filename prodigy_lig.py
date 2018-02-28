@@ -229,94 +229,33 @@ def calc_atomic_contacts_python(structure, chains, cutoff=10.5):
     :param structure: Biopython structure object of the input file
     :return: List of contacts
     """
-    def _process_coord_line(line):
-        """
-        Bundle every atom along with its coordinates in a dictionary.
+    # Ignore multi model structures
+    interactors = [[], []]
+    structure = structure[0]
 
-        :param line: A PDB formatted coordinate line
-        :return: dict of all the coordinates
-        """
-        coord_line = (
-            line.startswith("ATOM") or line.startswith("HETATM")
-        )
-        if coord_line:
-            return {
-                "chain": line[21],
-                "resid": line[22:26].strip(),
-                "name": line[12:16].strip(),
-                "resname": line[17:20].strip(),
-                "coords": {
-                    "x": float(line[30:38]),
-                    "y": float(line[38:46]),
-                    "z": float(line[46:54])
-                }
-            }
-        else:
-            return None
-
-    def _calc_dist(coords_1, coords_2):
-        """Calculate euclidean distance in 3D space."""
-        dist = (
-            (coords_1.coords_x - coords_2.coords_x) ** 2 +
-            (coords_1.coords_y - coords_2.coords_y) ** 2 +
-            (coords_1.coords_z - coords_2.coords_z) ** 2
-        ) ** 0.5
-
-        return dist
-
-    coordinates = [[], []]
-    flattened_chains = []
     for group in chains:
         for chain in group:
-            flattened_chains.append(chain)
+            chain_index = [chain in group for group in chains].index(True)
+            interactors[chain_index].append(structure[chain])
 
-    coord_object = namedtuple("atom", ["fullname", "coords_x", "coords_y", "coords_z"])
-
-    io = PDBIO()
-    io.set_structure(structure)
-    io_stream = StringIO()
-    io.save(io_stream)
-    io_stream.seek(0)
-
-    for line in io_stream:
-        coord_line = _process_coord_line(line)
-        if coord_line:
-            chain = coord_line["chain"]
-            full_name = "{}_{}_{}_{}".format(
-                coord_line["resname"],
-                coord_line["resid"],
-                coord_line["name"],
-                coord_line["chain"]
-            )
-
-            # Make sure that the chain that is being read is part of the specified chains.
-            if chain in flattened_chains:
-                chain_index = [chain in group for group in chains].index(True)
-                coordinates[chain_index].append(
-                    coord_object(
-                        full_name,
-                        coord_line["coords"]["x"],
-                        coord_line["coords"]["y"],
-                        coord_line["coords"]["z"]
-                    )
-                )
-    
     contacts = []
-    for ref_atom in coordinates[0]:
-        for mob_atom in coordinates[1]:
-            dist = _calc_dist(ref_atom, mob_atom)
-            if dist <= cutoff:
-                contacts.append("\t".join([
-                    ref_atom.fullname.split("_")[0],
-                    ref_atom.fullname.split("_")[3],
-                    ref_atom.fullname.split("_")[1],
-                    ref_atom.fullname.split("_")[2],
-                    mob_atom.fullname.split("_")[0],
-                    mob_atom.fullname.split("_")[3],
-                    mob_atom.fullname.split("_")[1],
-                    mob_atom.fullname.split("_")[2],
-                    str(dist)
-                ]))
+    for protein_chain in interactors[0]:
+        for ligand_chain in interactors[1]:
+            for protein_atom in protein_chain.get_atoms():
+                for ligand_atom in ligand_chain.get_atoms():
+                    dist = protein_atom - ligand_atom
+                    if dist <= cutoff:
+                        contacts.append("\t".join([
+                            protein_atom.parent.resname,
+                            protein_atom.parent.parent.id,
+                            str(protein_atom.parent.id[1]),
+                            protein_atom.name,
+                            ligand_atom.parent.resname,
+                            ligand_atom.parent.parent.id,
+                            str(ligand_atom.parent.id[1]),
+                            ligand_atom.name,
+                            str(dist)
+                        ]))
 
     return contacts
 
