@@ -27,8 +27,8 @@ class ProdigyLig(object):
     """Run the prodigy-lig calculations and store all the relevant output."""
     def __init__(self, structure, chains, electrostatics, cpp_contacts, cutoff=10.5):
         """Initialise the Prodigy-lig instance."""
-        self.structure = structure
         self.chains = self._parse_chains(chains)
+        self.structure = self._clean_structure(structure)
         self.electrostatics = electrostatics
         self.cpp_contacts = cpp_contacts
         self.cutoff = cutoff
@@ -72,7 +72,7 @@ class ProdigyLig(object):
             'contact_counts': self.contact_counts
         }
 
-    def _clean_structure(self):
+    def _clean_structure(self, structure):
         """
         Remove all the unnecessary elements from the structure.
 
@@ -80,10 +80,12 @@ class ProdigyLig(object):
         because otherwise their presence might affect the algorithm. In the case
         of multi-model structures we are only keeping the first model.
         """
-        structure = self.structure[0]
+        if len(structure) > 1:
+            for i in xrange(1, len(structure)):
+                structure.detach_child(structure[i].id)
 
         specified_chains = [chain for group in self.chains for chain in group]
-        structure_chains = list(self.structure.get_chains())
+        structure_chains = [chain.id for chain in list(structure.get_chains())]
 
         for chain in specified_chains:
             if chain not in structure_chains:
@@ -91,6 +93,12 @@ class ProdigyLig(object):
                     "Chain {} specified during runtime wasn't found in "
                     "the structure".format(chain)
                 )
+        
+        for chain in structure_chains:
+            if chain not in specified_chains:
+                structure[0].detach_child(chain)
+
+        return structure
 
     @staticmethod
     def _parse_chains(chains):
