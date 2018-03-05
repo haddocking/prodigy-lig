@@ -35,6 +35,7 @@ class ProdigyLig(object):
         self.dg_score = None
         self.dg_elec = None
         self.dg = None
+        self.atomic_contacts = None
         self.contact_counts = None
 
     def predict(self):
@@ -43,16 +44,16 @@ class ProdigyLig(object):
         """
         if self.cpp_contacts is not None:
             self.cpp_contacts = self.cpp_contacts[0]
-            atomic_contacts = calc_atomic_contacts_cpp(self.cpp_contacts, self.structure, self.chains, self.cutoff)
+            self.atomic_contacts = calc_atomic_contacts_cpp(self.cpp_contacts, self.structure, self.chains, self.cutoff)
         else:
-            atomic_contacts = calc_atomic_contacts_python(self.structure, self.chains, self.cutoff)
+            self.atomic_contacts = calc_atomic_contacts_python(self.structure, self.chains, self.cutoff)
 
-        if len(atomic_contacts) == 0:
+        if len(self.atomic_contacts) == 0:
             raise RuntimeWarning(
                 "There are no contacts between the specified chains."
             )
 
-        self.contact_counts = calculate_contact_counts(atomic_contacts)
+        self.contact_counts = calculate_contact_counts(self.atomic_contacts)
 
         if self.electrostatics is not None:
             self.dg_score = calculate_score(self.contact_counts, self.electrostatics)
@@ -156,6 +157,19 @@ class ProdigyLig(object):
             except RuntimeError:
                 raise
         return parsed_chains
+
+    def print_contacts(self, outfile=''):
+        """Print the atomic contacts to STDOUT or the specified handle."""
+        if outfile:
+            handle = open(outfile, 'w')
+        else:
+            handle = sys.stdout
+
+        for line in self.atomic_contacts:
+            handle.write("{}\n".format(line))
+
+        if handle is not sys.stdout:
+            handle.close()
 
     def print_prediction(self, outfile=''):
         if outfile:
