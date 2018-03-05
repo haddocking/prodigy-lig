@@ -61,16 +61,19 @@ class ProdigyLig(object):
 
     def as_dict(self):
         """Return the data of the class as a dictionary for the server."""
-        return {
+        data = {
             'structure': self.structure.id,
             'chains': self.chains,
             'electrostatics': self.electrostatics,
             'cutoff': self.cutoff,
             'dg_score': self.dg_score,
             'dg_elec': self.dg_elec,
-            'dg': self.dg,
-            'contact_counts': self.contact_counts
+            'dg': self.dg
         }
+        
+        data.update(self.contact_counts)
+
+        return data 
 
     def _clean_structure(self, structure):
         """
