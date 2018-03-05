@@ -25,12 +25,11 @@ from Bio.PDB import PDBParser, FastMMCIFParser, PDBIO
 
 class ProdigyLig(object):
     """Run the prodigy-lig calculations and store all the relevant output."""
-    def __init__(self, structure, chains, electrostatics, cpp_contacts, cutoff=10.5):
+    def __init__(self, structure, chains, electrostatics, cutoff=10.5):
         """Initialise the Prodigy-lig instance."""
         self.chains = self._parse_chains(chains)
         self.structure = self._clean_structure(structure)
         self.electrostatics = electrostatics
-        self.cpp_contacts = cpp_contacts
         self.cutoff = cutoff
         self.dg_score = None
         self.dg_elec = None
@@ -42,11 +41,7 @@ class ProdigyLig(object):
         """
         API method used by the webserver
         """
-        if self.cpp_contacts is not None:
-            self.cpp_contacts = self.cpp_contacts[0]
-            self.atomic_contacts = calc_atomic_contacts_cpp(self.cpp_contacts, self.structure, self.chains, self.cutoff)
-        else:
-            self.atomic_contacts = calc_atomic_contacts_python(self.structure, self.chains, self.cutoff)
+        self.atomic_contacts = calc_atomic_contacts(self.structure, self.chains, self.cutoff)
 
         if len(self.atomic_contacts) == 0:
             raise RuntimeWarning(
@@ -71,10 +66,10 @@ class ProdigyLig(object):
             'dg_elec': self.dg_elec,
             'dg': self.dg
         }
-        
+
         data.update(self.contact_counts)
 
-        return data 
+        return data
 
     def _clean_structure(self, structure):
         """
@@ -84,23 +79,70 @@ class ProdigyLig(object):
         because otherwise their presence might affect the algorithm. In the case
         of multi-model structures we are only keeping the first model.
         """
+        def _is_it_a_residue(residue):
+            """
+            Check for the presence of backbone atoms.
+
+            Pretty often PDB files contain modified residues that are part of
+            a protein but are classified as HETATM, such as a selenomethionine
+            (MSE). We want to keep these atoms instead of discarding them.
+            """
+            backbone_atoms = set(["C", "CA", "N", "O"])
+            residue_atoms = set([_.id for _ in residue.child_list])
+
+            if len(residue_atoms.intersection(backbone_atoms)) == 4:
+                return True
+            else:
+                return False
+
         if len(structure) > 1:
             for i in xrange(1, len(structure)):
                 structure.detach_child(structure[i].id)
 
-        specified_chains = [chain for group in self.chains for chain in group]
+        chains = self.chains[0] + list(self.chains[1][0])
+        specified_chains = {chain for chain in chains}
         structure_chains = [chain.id for chain in list(structure.get_chains())]
 
         for chain in specified_chains:
             if chain not in structure_chains:
                 raise RuntimeWarning(
-                    "Chain {} specified during runtime wasn't found in "
-                    "the structure".format(chain)
+                    ("Chain {} specified during runtime wasn't found in "
+                    "the structure").format(chain)
                 )
-        
+
+        ligand_chain, ligand_residue = self.chains[1]
+        ligand_residues = [
+            _.resname for _ in structure[0][ligand_chain].child_list
+        ]
+
+        if ligand_residue not in ligand_residues:
+            raise RuntimeError(
+                ("Ligand identifier {} not found"
+                " in chain {} of the input file.").format(
+                    ligand_residue,
+                    ligand_chain
+                )
+            )
+
         for chain in structure_chains:
             if chain not in specified_chains:
                 structure[0].detach_child(chain)
+            else:
+                for res in list(structure[0][chain].child_list):
+                    if res.id[0] == "W":
+                        structure[0][chain].detach_child(res.id)
+                        continue
+                    if chain not in self.chains[0]:
+                        # We are only interested in the ligand here.
+                        # Everything else can go.
+                        if res.resname != ligand_residue:
+                            structure[0][chain].detach_child(res.id)
+                    else:
+                        if res.resname != ligand_residue:
+                            if _is_it_a_residue(res) or res.id[0] == " ":
+                                continue
+                            else:
+                                structure[0][chain].detach_child(res.id)
 
         return structure
 
@@ -109,53 +151,76 @@ class ProdigyLig(object):
         """
         Parse the chain and return a list of lists.
 
-        The chains specification allows for one chain per interactor or more. If more
-        than one chains per interactor are specified split on ',' and return the chains
+        The chains specification requires one chain per interactor. The first
+        argument following the -c flag is the specfication for the protein
+        selection and more than one chain ids can be specified by comma separating
+        them. The second command line argument following -c corresponds to the
+        ligand specification and requires one chain id followed by the reside
+        identifier of the ligand (e.g. -c A B:LIG). The parsed chains are returned
         as a list.
         """
-        def validate_chain_string(chain_string):
-            """
-            Check the chain string for any character other than letters and commas.
-            """
-            chain_string = chain_string.upper()
-            try:
-                chain_string.decode("ascii")
-            except UnicodeDecodeError:
+        parsed_chains = []
+        chains = [_.upper() for _ in chains]
+        flattened_chains_string = "".join(chains)
+        protein_chain_string, ligand_chain_string = chains
+
+        try:
+            flattened_chains_string.decode("ascii")
+        except UnicodeDecodeError:
+            raise RuntimeError(
+                "Please use uppercase ASCII characters [ A-Z ]."
+            )
+
+        if len(protein_chain_string) == 1:
+            if protein_chain_string not in string.uppercase:
                 raise RuntimeError(
-                    "Please use uppercase ASCII characters [ A-Z ]."
+                    "Please use standard chain identifiers [ A-Z ]."
+                )
+        else:
+            for char in protein_chain_string:
+                if char not in string.uppercase and char != ",":
+                    raise RuntimeError(
+                        "Use uppercase ASCII characters [ A-Z ] to speciy the"
+                        " chains and , to separate them."
+                    )
+
+            # Make sure that "A," or "A,B," didn't slip through
+            comma_count = protein_chain_string.count(",")
+            chain_count = len(set(protein_chain_string).intersection(string.uppercase))
+
+            if comma_count != chain_count -1:
+                raise RuntimeError(
+                    "Specify multiple chains like this: prodigy_lig.py -c A,B C"
                 )
 
-            if len(chain_string) == 1:
-                if chain_string not in string.uppercase:
-                    raise RuntimeError(
-                        "Please use standard chain identifiers [ A-Z ]."
-                    )
-            else:
-                for char in chain_string:
-                    if char not in string.uppercase and char != ",":
-                        raise RuntimeError(
-                            "Use uppercase ASCII characters [ A-Z ] to speciy the"
-                            " chains and , to separate them."
-                        )
+        parsed_chains.append(protein_chain_string.split(","))
+        alphanum = set(string.uppercase + string.digits)
 
-                # Make sure that "A," or "A,B," didn't slip through
-                comma_count = chain_string.count(",")
-                chain_count = len(set(chain_string).intersection(string.uppercase))
+        ligand_specification = (
+            "Use uppercase ASCII characters [ A-Z ] to speciy the "
+            "chain and ligand identifiers. Separate the ligand "
+            "identifier from its chain by colon. prodigy_lig.py "
+            "-c A B:LIG"
+        )
+        if len(ligand_chain_string) != 5:
+            raise RuntimeError(ligand_specification)
 
-                if comma_count != chain_count -1:
-                    raise RuntimeError(
-                        "Specify multiple chains like this: prodigy_lig.py -c A,B C"
-                    )
+        for char in ligand_chain_string:
+            if char not in alphanum and char != ":":
+                raise RuntimeError(ligand_specification)
 
-            return chain_string
+        if ligand_chain_string.count(":") != 1:
+            raise RuntimeError(ligand_specification)
 
-        parsed_chains = []
-        for chain in chains:
-            try:
-                chain = validate_chain_string(chain)
-                parsed_chains.append(chain.split(","))
-            except RuntimeError:
-                raise
+        chain, ligand = ligand_chain_string.split(":")
+        if len(chain) != 1:
+            raise RuntimeError(ligand_specification)
+
+        if len(ligand) != 3:
+            raise RuntimeError(ligand_specification)
+
+        parsed_chains.append(ligand_chain_string.split(":"))
+
         return parsed_chains
 
     def print_contacts(self, outfile=''):
@@ -213,94 +278,36 @@ def extract_electrostatics(pdb_file):
     return electrostatics
 
 
-def calc_atomic_contacts_cpp(contact_executable, pdb_file, chains, cutoff=10.5):
-    """
-    Calculate atomic contacts.
-
-    This will call out to the executable defined during startup time and
-    collect its output. After processing it will return a list of the
-    atomic contacts.
-
-    :param contact_executable: Path to the all-atom contact script
-    :type contact_executable: str or unicode
-    :param pdb_file: The structure object
-    :type pdb_file: Bio.PDB structure object
-    :param cutoff: The cutoff to use for the AC calculation
-    :type cutoff: float
-    :return: Str of atomic contacts
-    """
-    def _filter_contacts_by_chain(contacts, chains):
-        """
-        Filter the contacts using only the chains specified during runtime.
-        """
-        filtered_contacts = []
-
-        for contact in contacts:
-            words = contact.split()
-            chain1 = words[1].upper()
-            chain2 = words[5].upper()
-
-            chains_are_acceptable = (
-                (chain1 in chains[0] and chain2 in chains[1]) or
-                (chain1 in chains[1] and chain2 in chains[0])
-            )
-
-            if chains_are_acceptable:
-                filtered_contacts.append(contact)
-
-        return filtered_contacts
-
-    io = PDBIO()
-    io.set_structure(pdb_file)
-    io_stream = StringIO()
-    io.save(io_stream)
-    io_stream.seek(0)
-
-    p = Popen([contact_executable, str(cutoff)], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    for line in io_stream:
-        p.stdin.write(line)
-    p.stdin.close()
-    atomic_contacts = p.stdout.readlines()
-
-    del atomic_contacts[-1]
-
-    return _filter_contacts_by_chain(atomic_contacts, chains)
-
-
-def calc_atomic_contacts_python(structure, chains, cutoff=10.5):
+def calc_atomic_contacts(structure, chains, cutoff=10.5):
     """
     Calculate the contacts without calling out to the CPP code.
 
     :param structure: Biopython structure object of the input file
     :return: List of contacts
     """
-    # Ignore multi model structures
-    interactors = [[], []]
-    structure = structure[0]
-
-    for group in chains:
-        for chain in group:
-            chain_index = [chain in group for group in chains].index(True)
-            interactors[chain_index].append(structure[chain])
-
     contacts = []
-    for protein_chain in interactors[0]:
-        for ligand_chain in interactors[1]:
-            for protein_atom in protein_chain.get_atoms():
-                for ligand_atom in ligand_chain.get_atoms():
-                    dist = protein_atom - ligand_atom
-                    if dist <= cutoff:
-                        contacts.append("\t".join([
-                            protein_atom.parent.resname,
-                            protein_atom.parent.parent.id,
-                            str(protein_atom.parent.id[1]),
-                            protein_atom.element,
-                            ligand_atom.parent.resname,
-                            ligand_atom.parent.parent.id,
-                            str(ligand_atom.parent.id[1]),
-                            ligand_atom.element,
-                            str(dist)
-                        ]))
+    structure = structure[0]
+    prot_chains = {_ for _ in chains[0] + list(chains[1][0])}
+    lig_chain, lig_res = chains[1]
+
+    for lig_atom in structure[lig_chain].get_atoms():
+        if lig_atom.parent.resname == lig_res:
+            for prot_chain in prot_chains:
+                for prot_atom in structure[prot_chain].get_atoms():
+                    if prot_atom.parent.resname != lig_atom.parent.resname:
+                        dist = lig_atom - prot_atom
+                        if dist <= cutoff:
+                            contacts.append("\t".join([
+                                prot_atom.parent.resname,
+                                prot_atom.parent.parent.id,
+                                str(prot_atom.parent.id[1]),
+                                prot_atom.element,
+                                lig_atom.parent.resname,
+                                lig_atom.parent.parent.id,
+                                str(lig_atom.parent.id[1]),
+                                lig_atom.element,
+                                str(dist)
+                            ]))
 
     return contacts
 
@@ -474,17 +481,6 @@ def _parse_arguments():
     parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument(
-        '--cpp_contacts',
-        required=False,
-        nargs=1,
-        help=(
-            'Path to the all-atom contact script. By default prodigy_lig.py'
-            ' will calculate the distances using a built-in implementation. In'
-            ' some cases there might be a speed-up when using external compiled'
-            ' code.'
-        )
-    )
-    parser.add_argument(
         '-c',
         '--chains',
         required=True,
@@ -515,6 +511,7 @@ def _parse_arguments():
         '--distance_cutoff',
         required=False,
         default=10.5,
+        type=float,
         help=u'This is the distance cutoff for the Atomic Contacts '
              u' (def = 10.5Å).'
     )
@@ -541,7 +538,6 @@ def main():
             parser.get_structure(fname, in_file),
             chains=args.chains,
             electrostatics=electrostatics,
-            cpp_contacts=args.cpp_contacts,
             cutoff=args.distance_cutoff
         )
 
