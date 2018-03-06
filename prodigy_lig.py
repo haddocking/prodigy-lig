@@ -4,11 +4,20 @@
 """
 Calculate the Binding Affinity score using the PRODIGY-LIG model
 
-This script only requires one PDB file as input and expects that
-the all-atom contact script lives somewhere in the PATH. Failing
-that the user can provide the path to the executable.
+prodigy_lig dependes on biopython for the structure manipulations
+and only requires a single structure file (in mmCIF or PDB format)
+as input.
 
-Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt
+prodigy_lig is licensed under the Apache License 2.0 included in
+the LICENSE file of this repository or at the following URL
+
+https://github.com/haddocking/prodigy-lig/blob/master/LICENSE
+
+If you use prodigy_lig in your research please cite the following
+papers:
+
+1. to be submitted
+2. https://doi.org/10.1007/s10822-017-0049-y
 """
 
 from __future__ import print_function
@@ -510,7 +519,11 @@ def calculate_DG_electrostatics(contact_counts, electrostatics_energy):
 
 def _parse_arguments():
     """Parse the command line arguments."""
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt'
+    )
 
     parser.add_argument(
         '-c',
