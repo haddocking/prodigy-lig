@@ -251,6 +251,11 @@ class ProdigyLig(object):
         if handle is not sys.stdout:
             handle.close()
 
+    def print_structure(self, outfile=''):
+        """Store the processed structure in a file."""
+        io = PDBIO()
+        io.set_structure(self.structure)
+        io.save(outfile)
 
 def extract_electrostatics(pdb_file):
     """
@@ -515,6 +520,16 @@ def _parse_arguments():
         help=u'This is the distance cutoff for the Atomic Contacts '
              u' (def = 10.5Å).'
     )
+    parser.add_argument(
+        '-o',
+        '--output_file',
+        default=None,
+        action='store_true',
+        required=False,
+        help='Store the processed file. The filename will be the name '
+             'of the input with -processed appended just before the '
+             'file ending.'
+    )
 
     return parser.parse_args()
 
@@ -544,6 +559,10 @@ def main():
     prodigy_lig.predict()
     prodigy_lig.print_prediction()
 
+    if args.output_file is not None:
+        output_file_name = splitext(prodigy_lig.structure.id)[0]
+        output_file_name += "-processed.pdb"
+        prodigy_lig.print_structure(output_file_name)
 
 if __name__ == "__main__":
     main()
