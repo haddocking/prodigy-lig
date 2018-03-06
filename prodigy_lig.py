@@ -12,6 +12,9 @@ Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt
 """
 
 from __future__ import print_function
+
+__version__ = '0.0.0'
+
 from os.path import basename, splitext
 import sys
 import argparse
@@ -560,8 +563,14 @@ def _parse_arguments():
         default=False,
         action='store_true',
         required=False,
-        help='Be more verbose with the output and include the '
-             'calculated contact counts in the output.'
+        help='Include the calculated contact counts in the output.'
+    )
+    parser.add_argument(
+        '-V',
+        '--version',
+        action='version',
+        version='%(prog)s {}'.format(__version__),
+        help='Print the version and exit.'
     )
 
     return parser.parse_args()
