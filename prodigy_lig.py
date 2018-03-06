@@ -16,9 +16,6 @@ from os.path import basename, splitext
 import sys
 import argparse
 import string
-from subprocess import Popen, PIPE
-from StringIO import StringIO
-from collections import namedtuple
 
 from Bio.PDB import PDBParser, FastMMCIFParser, PDBIO
 
