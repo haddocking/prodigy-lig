@@ -31,7 +31,7 @@ Table of Contents
 
 prodify_lig is [python 2](https://www.python.org/) code and it depends on
 [biopython](http://biopython.org/). If you have installed pip for your
-python envirnoment running `pip install biopython` should do the trick,
+python environment running `pip install biopython` should do the trick,
 although you might need to run that with elevated privileges if you are
 installing to a system-wide location. The biopython homepage contains
 installation instructions along with helpful debugging information.
@@ -58,7 +58,7 @@ If not then you will need to unzip the directory first with
 
 ## Configuration
 
-If you want to make your python envirnoment aware of prodigy_lig (allowing you
+If you want to make your python environment aware of prodigy_lig (allowing you
 to import it like any other module) then you need to modify your PYTHONPATH
 variable accordingly.
 
@@ -157,6 +157,16 @@ optional arguments:
 Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt
 ```
 
+For all the examples mentioned below the following two caveats apply:
+
+**prodigy_lig only considers contacts between the ligand and residues of the
+protein**. Any cofactors, ions or solvent molecules that might be present,
+are not included in the distances that are calculated.
+
+Additionaly, prodigy_lig **only works on single model structures**. That means
+that if your structure of interest contains multiple models (e.g. NMR conformers)
+only the first model will be used for the calculations.
+
 ## Command line arguments
 
 The command line arguments belong to one of two categories; required and optional.
@@ -179,7 +189,8 @@ chains can be specified by comma separating them. The second argument allows us 
 specify the chain and residue identifier of the ligand of interest. The chain and
 residue identifier must be separated by a colon (`:`).
 
-For the next examples we will be using the structure from the quickstart [section](#quick-start), 1A0Q.
+For the next examples we will be using the structure from the quickstart
+[section](#quick-start), 1A0Q.
 
  If you didn't do so before you can fetch the PDb file with the following line of
  code from the command line.
@@ -210,8 +221,7 @@ Job name        DGprediction (low refinement) (Kcal/mol)
 ```
 
 In this case, atomic distances from the ligand to residues of both chains have
-been calculated. **This only includes atoms of the protein.** Any cofactors,
-ions or solvent molecules that might be present, are not included in the distances that are calculated.
+been calculated.
 
 If we wanted to only include the heavy chain (`H`) in the analysis we would use
 this command instead.
@@ -252,7 +262,8 @@ this with the `-d` flag (`--distance_cutoff`).
 
 #### Processed output file
 
-If you would like a copy of the structure that was used to calculate the atomic contacts you can use the `-o` flag (`--output_file`). This might be useful if you
+If you would like a copy of the structure that was used to calculate the atomic
+contacts you can use the `-o` flag (`--output_file`). This might be useful if you
 have chosen to exclude some chains from the analysis. The file will be created in
 the current working directory and its filename will be `input_name-processed.pdb`.
 
