@@ -29,9 +29,9 @@ Table of Contents
 
 ## Dependencies
 
-prodify_lig is [python 2](https://www.python.org/) code and it depends on
+prodigy_lig is [python 2](https://www.python.org/) code and it depends on
 [biopython](http://biopython.org/). If you have installed pip for your
-python environment running `pip install biopython` should do the trick,
+python environment, running `pip install biopython` should do the trick,
 although you might need to run that with elevated privileges if you are
 installing to a system-wide location. The biopython homepage contains
 installation instructions along with helpful debugging information.
@@ -185,14 +185,14 @@ and it should be the path to the input PDB/mmCIF file.
 The `-c` flag (or `--chains`) must be used to specify the chain identifiers for
 the interactors, and for the ligand the residue identifier as well. The first
 argument allows to specify the protein chains to be used in the analysis. Multiple
-chains can be specified by comma separating them. The second argument allows us to
-specify the chain and residue identifier of the ligand of interest. The chain and
-residue identifier must be separated by a colon (`:`).
+chains can be specified by comma separating them. The second argument needs to 
+specify the chain and residue identifier of the ligand of interest separated by 
+a colon (`:`).
 
 For the next examples we will be using the structure from the quickstart
 [section](#quick-start), 1A0Q.
 
- If you didn't do so before you can fetch the PDb file with the following line of
+ If you didn't do so before you can fetch the PDB file with the following line of
  code from the command line.
 
  ```
@@ -270,7 +270,7 @@ the current working directory and its filename will be `input_name-processed.pdb
 #### Verbosity
 
 If you specify the `-v` flag (`--verbose`), in addition to the DG values / scores,
-the output will include the contact counts and if defined electrostatics as well.
+the output will include the contact counts and, if defined, electrostatics as well.
 Once again using the same example as above.
 
 ```
@@ -300,4 +300,4 @@ prodigy_lig is licensed under [Apache 2.0](LICENSE).
 
 Issues? Bug reports? Suggestions? Feel free to
 [submit](https://github.com/haddocking/prodigy-lig/issues) an issue. Alternatively,
-you can reach us at email@email.com.
+you can reach us at prodigy.bonvilab@gmail.com.
