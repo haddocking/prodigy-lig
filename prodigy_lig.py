@@ -236,18 +236,38 @@ class ProdigyLig(object):
         if handle is not sys.stdout:
             handle.close()
 
-    def print_prediction(self, outfile=''):
+    def print_prediction(self, outfile='', verbose=False):
+        """Print to the File or STDOUT if no filename is specified."""
         if outfile:
             handle = open(outfile, 'w')
         else:
             handle = sys.stdout
-        """Print to the File or STDOUT if no filename is specified."""
         if self.electrostatics is not None:
-            handle.write("{}\t{}\t{}\n".format("Job name", "DGprediction (Kcal/mol)", "DGscore"))
-            handle.write("{0}\t{1:.2f}\t{2:.2f}\n".format(self.structure.id, self.dg_elec, self.dg_score))
+            header = ["Job name", "DGprediction (Kcal/mol)", "DGscore"]
+            values = [self.structure.id, self.dg_elec, self.dg_score]
+            if verbose:
+                header.append("Electrostatics Energy")
+                values.append(self.electrostatics)
+                for key, value in sorted(self.contact_counts.iteritems()):
+                    header.append(key)
+                    values.append(value)
+                handle.write("\t".join(header) + "\n")
+                handle.write(("{}" + "\t{:.2f}" * 3 + "\t{:4d}" * 10 + "\n").format(*values))
+            else:
+                handle.write("\t".join(header) + "\n")
+                handle.write("{}\t{:.2f}\t{:.2f}\n".format(*values))
         else:
-            handle.write("{}\t{}\n".format("Job name", "DGprediction (low refinement) (Kcal/mol)"))
-            handle.write("{0}\t{1:.2f}\n".format(self.structure.id, self.dg))
+            header = ["Job name", "DGprediction (low refinement) (Kcal/mol)"]
+            values = [self.structure.id, self.dg]
+            if verbose:
+                for key, value in sorted(self.contact_counts.iteritems()):
+                    header.append(key)
+                    values.append(value)
+                handle.write("\t".join(header) + "\n")
+                handle.write(("{}\t{:.2f}" + "\t{:4d}" * 10 + "\n").format(*values))
+            else:
+                handle.write("\t".join(header) + "\n")
+                handle.write("{}\t{:.2f}\n".format(*values))
         if handle is not sys.stdout:
             handle.close()
 
@@ -530,6 +550,15 @@ def _parse_arguments():
              'of the input with -processed appended just before the '
              'file ending.'
     )
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        default=False,
+        action='store_true',
+        required=False,
+        help='Be more verbose with the output and include the '
+             'calculated contact counts in the output.'
+    )
 
     return parser.parse_args()
 
@@ -557,7 +586,7 @@ def main():
         )
 
     prodigy_lig.predict()
-    prodigy_lig.print_prediction()
+    prodigy_lig.print_prediction('', args.verbose)
 
     if args.output_file is not None:
         output_file_name = splitext(prodigy_lig.structure.id)[0]
