@@ -90,7 +90,7 @@ class ProdigyLig(object):
             backbone_atoms = set(["C", "CA", "N", "O"])
             residue_atoms = set([_.id for _ in residue.child_list])
 
-            if len(residue_atoms.intersection(backbone_atoms)) == 4:
+            if len(residue_atoms.intersection(backbone_atoms)) >= 3:
                 return True
             else:
                 return False
