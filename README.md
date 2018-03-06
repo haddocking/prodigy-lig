@@ -1,10 +1,94 @@
+Table of Contents
+=================
+
+   * [Introduction](#introduction)
+   * [Download and Installation](#download-and-installation)
+      * [Dependencies](#dependencies)
+      * [Download](#download)
+      * [Installation](#installation)
+      * [Configuration](#configuration)
+   * [Quick start](#quick-start)
+   * [Usage](#usage)
+      * [Command line arguments](#command-line-arguments)
+         * [Required arguments](#required-arguments)
+            * [Input file](#input-file)
+            * [Chain specification](#chain-specification)
+         * [Optional arguments](#optional-arguments)
+            * [Electrostatics Energy](#electrostatics-energy)
+            * [Distance cutoff](#distance-cutoff)
+            * [Processed output file](#processed-output-file)
+            * [Verbosity](#verbosity)
+            * [Version](#version)
+      * [I don't like the command line.](#i-dont-like-the-command-line)
+   * [Licensing](#licensing)
+   * [Contact](#contact)
+
 # Introduction
+
+# Download and Installation
+
+## Dependencies
+
+prodify_lig is [python 2](https://www.python.org/) code and it depends on
+[biopython](http://biopython.org/). If you have installed pip for your
+python envirnoment running `pip install biopython` should do the trick,
+although you might need to run that with elevated privileges if you are
+installing to a system-wide location. The biopython homepage contains
+installation instructions along with helpful debugging information.
+
+## Download
+
+If git is installed and correctly configured on your machine you should be able
+to do
+
+```
+git clone https://github.com/haddocking/prodigy-lig/
+```
+
+Otherwise, you can download prodigy_lig from the following
+[link](https://github.com/haddocking/prodigy-lig/archive/master.zip).
+
+## Installation
+
+If you cloned with git you can simply switch to the directory and start using
+the code with `cd prodigy-lig`.
+
+If not then you will need to unzip the directory first with
+`unzip prodigy-lig-master.zip`.
+
+## Configuration
+
+If you want to make your python envirnoment aware of prodigy_lig (allowing you
+to import it like any other module) then you need to modify your PYTHONPATH
+variable accordingly.
+
+For bourne-again shells and derivatives
+
+```sh
+export PYTHONPATH="/path/to/prodigy_lig:$PYTHONPATH"
+```
+
+For C-shell and derivatives
+
+```sh
+setenv PYTHONPATH "/path/to/prodigy_lig:$PYTHONPATH"
+```
+
+You might also want to export the directory of prodigy_lig to the PATH to be
+able to run it system-wide. Similarly to the previous commands
+
+```sh
+export PATH="/path/to/prodigy_lig:$PATH"
+```
+
+```sh
+setenv PATH "/path/to/prodigy_lig:$PATH"
+```
 
 # Quick start
 
-Assuming that you know what you are doing you can fetch a structure from the
-PDB and start using the code immediately. The following two lines should do
-the trick:
+You can fetch a structure from the PDB and start using the code immediately.
+The following two lines should do the trick:
 
 ```
 wget https://files.rcsb.org/download/1A0Q.pdb
@@ -191,3 +275,18 @@ Will produce the following output
 #### Version
 
 Finally you can use the `-V` flag (`--version`) to get the version of the code.
+
+## I don't like the command line.
+
+Too bad. Luckily for you, prodigy_lig has also been implemented in a freely accessible
+[webserver](https://nestor.science.uu.nl/prodigy/lig).
+
+# Licensing
+
+prodigy_lig is licensed under [Apache 2.0](LICENSE).
+
+# Contact
+
+Issues? Bug reports? Suggestions? Feel free to
+[submit](https://github.com/haddocking/prodigy-lig/issues) an issue. Alternatively,
+you can reach us at email@email.com.
