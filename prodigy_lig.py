@@ -17,7 +17,14 @@ import sys
 import argparse
 import string
 
-from Bio.PDB import PDBParser, FastMMCIFParser, PDBIO
+try:
+    from Bio.PDB import PDBParser, FastMMCIFParser, PDBIO
+except ImportError:
+    print(
+        "prodigy_lig depends on Biopython. Please install "
+        "Biopython along with its dependencies and restart."
+    )
+    sys.exit(1)
 
 
 class ProdigyLig(object):
