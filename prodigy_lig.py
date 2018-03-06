@@ -531,10 +531,12 @@ def _parse_arguments():
         required=True,
         nargs=2,
         help=(
-            'Which chains to use. You can specify multi-chain selections'
-            ' by comma separating the chain identifiers (e.g. -c A,B C,D).'
-            ' In that case only contacts between chains A - C+D and B - C+D'
-            ' will be considered.'
+            'Which chains to use. Expects two sets of arguments. The first '
+            'set refers to the protein selection and multiple chains can be'
+            ' specified by separating the chain identifiers with commas. The'
+            ' second set refers to the ligand and requires one chain and the'
+            ' residue identifier of the ligand. A typical use case could be '
+            'the following: prodigy_lig.py -c A,B A:LIG'
         )
     )
     parser.add_argument(
@@ -548,8 +550,8 @@ def _parse_arguments():
         '--electrostatics',
         required=False,
         type=float,
-        help=u'This is the electrostatics energy as calculated during the'
-             u' water refinement stage of HADDOCK.'
+        help='This is the electrostatics energy as calculated during the'
+             ' water refinement stage of HADDOCK.'
     )
     parser.add_argument(
         '-d',
@@ -557,8 +559,8 @@ def _parse_arguments():
         required=False,
         default=10.5,
         type=float,
-        help=u'This is the distance cutoff for the Atomic Contacts '
-             u' (def = 10.5Å).'
+        help='This is the distance cutoff for the Atomic Contacts '
+             ' (def = 10.5Å).'
     )
     parser.add_argument(
         '-o',
