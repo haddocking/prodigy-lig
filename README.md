@@ -46,9 +46,9 @@ read the LICENSE file.
 If our predictive model or any scripts are useful to you, consider citing them in your
 publications:
 
-** Vangone A, Schaarschmidt J, Koukos P, Geng C, Citro N, Trellet M, Xue L, Bonvin A.**: Large-scale prediction of binding affinity in protein-small ligand complexes: the PRODIGY-LIG web server. *Bioinformatics submitted*
+**Vangone A, Schaarschmidt J, Koukos P, Geng C, Citro N, Trellet M, Xue L, Bonvin A.**: Large-scale prediction of binding affinity in protein-small ligand complexes: the PRODIGY-LIG web server. *Bioinformatics submitted*
 
-** Kurkcuoglu Z, Koukos P, Citro N, Trellet M, Rodrigues J, Moreira I, Roel-Touris J, Melquiond A, Geng C, Schaarschmidt J,
+**Kurkcuoglu Z, Koukos P, Citro N, Trellet M, Rodrigues J, Moreira I, Roel-Touris J, Melquiond A, Geng C, Schaarschmidt J,
 Xue L, Vangone A, Bonvin AMJJ.**: Performance of HADDOCK and a simple contact-based protein-ligand binding affinity
 predictor in the D3R Grand Challenge 2. *J Comput Aided Mol Des* 32(1):175-185 (2017). ([link](https://www.ncbi.nlm.nih.gov/pubmed/?term=Performance+of+HADDOCK+and+a+simple+contact-based+protein%E2%80%93ligand+binding+affinity+predictor+in+the+D3R+Grand+Challenge+2))
 
