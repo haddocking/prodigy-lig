@@ -8,7 +8,7 @@ The online version of PRODIGY-LIG predictor can be found here:
 * [PRODIGY](http://milou.science.uu.nl/services/PRODIGY/)
 
 Details of the binding affinity predictor implemented in PRODIGY can be found here:
-* [The server](http://www.ncbi.nlm.nih.gov/pubmed/26193119)
+* [The server] (Submitted: Vangone et al. "Large-scale prediction of binding affinity in protein-small ligand complexes: the PRODIGY-LIG web server")
 * [Results of PRODIGY-LIG in D3F](https://www.ncbi.nlm.nih.gov/pubmed/?term=Performance+of+HADDOCK+and+a+simple+contact-based+protein%E2%80%93ligand+binding+affinity+predictor+in+the+D3R+Grand+Challenge+2)
 
 # Quick & Dirty Installation
