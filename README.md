@@ -5,7 +5,7 @@ values for protein-small ligands complexes, starting from their
 atominc 3D-structure (in the PDB of mmCIF format)
 
 The online version of PRODIGY-LIG predictor can be found here:
-* [PRODIGY](http://milou.science.uu.nl/services/PRODIGY/)
+* [PRODIGY-LIG](http://milou.science.uu.nl/services/PRODIGY/)
 
 Details of the binding affinity predictor implemented in PRODIGY can be found here:
 * [The server] (Submitted: Vangone et al. "Large-scale prediction of binding affinity in protein-small ligand complexes: the PRODIGY-LIG web server")
