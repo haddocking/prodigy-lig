@@ -24,6 +24,16 @@ Table of Contents
    * [Contact](#contact)
 
 # Introduction
+PRODIGY-LIG (PROtein binDIng enerGY prediction - LIGands) is a structure-based
+method for the prediction of binding affinity in protein-small ligands 
+(such as drugs or metabolites) complexes.
+Here is reported a collection of scripts what you can download and use to predict
+the binding addinity of your complex.
+
+If you are not familiar with scripting, the online version 
+of PRODIGY-LIG can be found here:
+* [PRODIGY-LIG](https://nestor.science.uu.nl/prodigy/lig)
+
 
 # Download and Installation
 
