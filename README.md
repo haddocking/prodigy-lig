@@ -21,7 +21,7 @@ Table of Contents
             * [Version](#version)
       * [I don't like the command line.](#i-dont-like-the-command-line)
    * [Licensing](#licensing)
-   * [Citing us] (#citing-us)
+   * [Citing us](#citing-us)
    * [Contact](#contact)
 
 # Introduction
