@@ -21,9 +21,20 @@ Table of Contents
             * [Version](#version)
       * [I don't like the command line.](#i-dont-like-the-command-line)
    * [Licensing](#licensing)
+   * [Citing us](#citing-us)
    * [Contact](#contact)
 
 # Introduction
+PRODIGY-LIG (PROtein binDIng enerGY prediction - LIGands) is a structure-based
+method for the prediction of binding affinity in protein-small ligands 
+(such as drugs or metabolites) complexes.
+Here is reported a collection of scripts what you can download and use to predict
+the binding addinity of your complex.
+
+If you are not familiar with scripting, the online version 
+of PRODIGY-LIG can be found here:
+* [PRODIGY-LIG](https://nestor.science.uu.nl/prodigy/lig)
+
 
 # Download and Installation
 
@@ -295,6 +306,17 @@ Too bad. Luckily for you, prodigy_lig has also been implemented in a freely acce
 # Licensing
 
 prodigy_lig is licensed under [Apache 2.0](LICENSE).
+
+# Citing us
+
+If our predictive model or any scripts are useful to you, consider citing them in your
+publications:
+
+**Vangone A, Schaarschmidt J, Koukos P, Geng C, Citro N, Trellet M, Xue L, Bonvin A.**: Large-scale prediction of binding affinity in protein-small ligand complexes: the PRODIGY-LIG web server. *Bioinformatics submitted*
+
+**Kurkcuoglu Z, Koukos P, Citro N, Trellet M, Rodrigues J, Moreira I, Roel-Touris J, Melquiond A, Geng C, Schaarschmidt J,
+Xue L, Vangone A, Bonvin AMJJ.**: Performance of HADDOCK and a simple contact-based protein-ligand binding affinity
+predictor in the D3R Grand Challenge 2. *J Comput Aided Mol Des* 32(1):175-185 (2017). ([link](https://www.ncbi.nlm.nih.gov/pubmed/?term=Performance+of+HADDOCK+and+a+simple+contact-based+protein%E2%80%93ligand+binding+affinity+predictor+in+the+D3R+Grand+Challenge+2))
 
 # Contact
 
