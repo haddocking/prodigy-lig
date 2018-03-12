@@ -2,13 +2,7 @@ Table of Contents
 =================
 
    * [Introduction](#introduction)
-   * [Download and Installation](#download-and-installation)
-      * [Automated Installation](#automated-installation)
-      * [Pip-less Installation](#pip-less-installation)
-         * [Dependencies](#dependencies)
-         * [Download](#download)
-         * [Installation](#installation)
-         * [Configuration](#configuration)
+   * [Installation](#installation)
    * [Quick start](#quick-start)
    * [Usage](#usage)
       * [Command line arguments](#command-line-arguments)
@@ -39,15 +33,10 @@ If you are not familiar with scripting, the online version
 of PRODIGY-LIG can be found here:
 * [PRODIGY-LIG](https://nestor.science.uu.nl/prodigy/lig)
 
-# Download and Installation
+# Installation
 
 prodigy_lig is [python 3](https://www.python.org/) code and it depends on
-[biopython](http://biopython.org/). If you have installed pip for your
-python environment, please follow the instructions that follow in the
-[Automated installation](#automated-installation) section. If not, then
-proceed to the [Pip-less Installation](#pip-less-installation) instructions.
-
-## Automated Installation
+[biopython](http://biopython.org/).
 
 From the command line terminal run the following command:
 
@@ -59,62 +48,6 @@ If you are installing to a system-wide location (e.g. `/usr/bin`) you might
 need elevated privileges.
 
 `prodigy_lig` should now be accessible from the command line.
-
-## Pip-less Installation
-
-### Dependencies
-
-Biopython is the only dependency of `prodigy_lig`. The biopython homepage
-contains installation instructions along with helpful debugging information.
-
-### Download
-
-If git is installed and correctly configured on your machine you should be able
-to do
-
-```
-git clone https://github.com/haddocking/prodigy-lig/
-```
-
-Otherwise, you can download prodigy_lig from the following
-[link](https://github.com/haddocking/prodigy-lig/archive/master.zip).
-
-### Installation
-
-If you cloned with git you can simply switch to the directory and start using
-the code with `cd prodigy-lig`.
-
-If not then you will need to unzip the directory first with
-`unzip prodigy-lig-master.zip`.
-
-### Configuration
-
-If you want to make your python environment aware of prodigy_lig (allowing you
-to import it like any other module) then you need to modify your PYTHONPATH
-variable accordingly.
-
-For bourne-again shells and derivatives
-
-```sh
-export PYTHONPATH="/path/to/prodigy_lig:$PYTHONPATH"
-```
-
-For C-shell and derivatives
-
-```sh
-setenv PYTHONPATH "/path/to/prodigy_lig:$PYTHONPATH"
-```
-
-You might also want to export the directory of prodigy_lig to the PATH to be
-able to run it system-wide. Similarly to the previous commands
-
-```sh
-export PATH="/path/to/prodigy_lig:$PATH"
-```
-
-```sh
-setenv PATH "/path/to/prodigy_lig:$PATH"
-```
 
 # Quick start
 
@@ -140,8 +73,8 @@ You can read more about the usage of prodigy_lig in the next section
 Running `prodigy_lig -h` will list some basic information about the code.
 
 ```
-usage: prodigy_lig.py [-h] -c CHAINS CHAINS -i INPUT_FILE [-e ELECTROSTATICS]
-                      [-d DISTANCE_CUTOFF] [-o] [-v] [-V]
+usage: prodigy_lig [-h] -c CHAINS CHAINS -i INPUT_FILE [-e ELECTROSTATICS]
+                   [-d DISTANCE_CUTOFF] [-o] [-v] [-V]
 
 Calculate the Binding Affinity score using the PRODIGY-LIG model
 
@@ -241,7 +174,7 @@ H.
 The simplest analysis we can do is to include both chains
 
 ```
-prodigy_lig.py -c H,L H:HEP -i 1A0Q.pdb
+prodigy_lig -c H,L H:HEP -i 1A0Q.pdb
 ```
 
 which produces the following output.
@@ -259,7 +192,7 @@ this command instead.
 
 
 ```
-prodigy_lig.py -c H H:HEP -i 1A0Q.pdb
+prodigy_lig -c H H:HEP -i 1A0Q.pdb
 ```
 
 which would produce this output
@@ -305,7 +238,7 @@ the output will include the contact counts and, if defined, electrostatics as we
 Once again using the same example as above.
 
 ```
-prodigy_lig.py -c H,L H:HEP -i 1A0Q.pdb -v
+prodigy_lig -c H,L H:HEP -i 1A0Q.pdb -v
 ```
 
 Will produce the following output
