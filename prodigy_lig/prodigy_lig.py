@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -14,8 +14,6 @@ papers:
 1. to be submitted
 2. https://doi.org/10.1007/s10822-017-0049-y
 """
-
-from __future__ import print_function
 
 __version__ = '0.0.0'
 
@@ -258,7 +256,7 @@ class ProdigyLig(object):
             if verbose:
                 header.append("Electrostatics Energy")
                 values.append(self.electrostatics)
-                for key, value in sorted(self.contact_counts.iteritems()):
+                for key, value in sorted(self.contact_counts.items()):
                     header.append(key)
                     values.append(value)
                 handle.write("\t".join(header) + "\n")
@@ -270,7 +268,7 @@ class ProdigyLig(object):
             header = ["Job name", "DGprediction (low refinement) (Kcal/mol)"]
             values = [self.structure.id, self.dg]
             if verbose:
-                for key, value in sorted(self.contact_counts.iteritems()):
+                for key, value in sorted(self.contact_counts.items()):
                     header.append(key)
                     values.append(value)
                 handle.write("\t".join(header) + "\n")
