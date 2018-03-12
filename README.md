@@ -345,4 +345,4 @@ the D3R Grand Challenge 2. *J Comput Aided Mol Des* 32(1):175-185 (2017). ([link
 
 Issues? Bug reports? Suggestions? Feel free to
 [submit](https://github.com/haddocking/prodigy-lig/issues) an issue. Alternatively,
-you can reach us at prodigy.bonvilab@gmail.com.
+you can reach us at prodigy.bonvinlab@gmail.com.
