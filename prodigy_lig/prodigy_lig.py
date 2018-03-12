@@ -6,11 +6,14 @@ Calculate the Binding Affinity score using the PRODIGY-LIG model
 prodigy_lig dependes on biopython for the structure manipulations
 and only requires a single structure file (in mmCIF or PDB format)
 as input.
+
 prodigy_lig is licensed under the Apache License 2.0 included in
 the LICENSE file of this repository or at the following URL
 https://github.com/haddocking/prodigy-lig/blob/master/LICENSE
+
 If you use prodigy_lig in your research please cite the following
 papers:
+
 1. to be submitted
 2. https://doi.org/10.1007/s10822-017-0049-y
 """
@@ -82,6 +85,7 @@ class ProdigyLig(object):
     def _clean_structure(self, structure):
         """
         Remove all the unnecessary elements from the structure.
+
         Water molecules, ions and cofactors need to be removed from the structure
         because otherwise their presence might affect the algorithm. In the case
         of multi-model structures we are only keeping the first model.
@@ -89,6 +93,7 @@ class ProdigyLig(object):
         def _is_it_a_residue(residue):
             """
             Check for the presence of backbone atoms.
+
             Pretty often PDB files contain modified residues that are part of
             a protein but are classified as HETATM, such as a selenomethionine
             (MSE). We want to keep these atoms instead of discarding them.
@@ -167,6 +172,7 @@ class ProdigyLig(object):
     def _parse_chains(chains):
         """
         Parse the chain and return a list of lists.
+
         The chains specification requires one chain per interactor. The first
         argument following the -c flag is the specfication for the protein
         selection and more than one chain ids can be specified by comma separating
@@ -289,6 +295,7 @@ class ProdigyLig(object):
 def extract_electrostatics(pdb_file):
     """
     Extracts the electrostatics energy from a HADDOCK PDB file.
+
     :param pdb_file: The input PDB file.
     :return: Electrostatics energy
     """
@@ -314,11 +321,11 @@ def extract_electrostatics(pdb_file):
 def calc_atomic_contacts(structure, chains, cutoff=10.5):
     """
     Calculate the contacts without calling out to the CPP code.
+
     :param structure: Biopython structure object of the input file
     :param chains: the interactor selection as array (e.g [ ['A', 'B'], ['A','LIG'] ])
     :param cutoff: the distance cutoff to determine interactions in Angstrom
     :return: List of contacts
-
     """
     contacts = []
     structure = structure[0]
@@ -356,6 +363,7 @@ def calculate_contact_counts(contacts):
     OO: Oxygen-Oxygen
     XX: Other-Other
     and the combinations: CN, CO, CX, NO, NX, OX
+
     :param contacts: The output of the calc_atomic_contacts functions
     :return: dict of the counts of each category defined above
     """
@@ -363,6 +371,7 @@ def calculate_contact_counts(contacts):
         """
         Classify the atom involved in the interaction in one of the categories
         laid out in calculate_atomic_contacts.
+
         :param atom: The atom involved in the interaction
         :return: Atom type. One of C, N, O, X
         """
@@ -375,6 +384,7 @@ def calculate_contact_counts(contacts):
         """
         Classify the contact in one of the categories defined in the function
         calculate_atomic_contact_counts.
+
         :param atom_classes: Class of the atoms involved in the interaction
         :type atom_classes: List of length 2
         :return: One of CC, NN, OO, XX, CN, CO, CX, NO, NX, OX
@@ -442,6 +452,7 @@ def calculate_score(contact_counts, electrostatics_energy):
     """
     Calculates the PRODIGY-lig score based on the contact counts and the
     electrostatics energy.
+
     :param contact_counts: Counts of the CC, NN, OO, XX contacts
     :type contact_counts: dict
     :param electrostatics_energy: Electrostatics energy calculated by HADDOCK
