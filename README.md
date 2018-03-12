@@ -3,10 +3,12 @@ Table of Contents
 
    * [Introduction](#introduction)
    * [Download and Installation](#download-and-installation)
-      * [Dependencies](#dependencies)
-      * [Download](#download)
-      * [Installation](#installation)
-      * [Configuration](#configuration)
+      * [Automated Installation](#automated-installation)
+      * [Pip-less Installation](#pip-less-installation)
+         * [Dependencies](#dependencies)
+         * [Download](#download)
+         * [Installation](#installation)
+         * [Configuration](#configuration)
    * [Quick start](#quick-start)
    * [Usage](#usage)
       * [Command line arguments](#command-line-arguments)
@@ -39,16 +41,33 @@ of PRODIGY-LIG can be found here:
 
 # Download and Installation
 
-## Dependencies
-
-prodigy_lig is [python 2](https://www.python.org/) code and it depends on
+prodigy_lig is [python 3](https://www.python.org/) code and it depends on
 [biopython](http://biopython.org/). If you have installed pip for your
-python environment, running `pip install biopython` should do the trick,
-although you might need to run that with elevated privileges if you are
-installing to a system-wide location. The biopython homepage contains
-installation instructions along with helpful debugging information.
+python environment, please follow the instructions that follow in the
+[Automated installation](#automated-installation) section. If not, then
+proceed to the [Pip-less Installation](#pip-less-installation) instructions.
 
-## Download
+## Automated Installation
+
+From the command line terminal run the following command:
+
+```sh
+pip install git+https://github.com/haddocking/prodigy-lig
+```
+
+If you are installing to a system-wide location (e.g. `/usr/bin`) you might
+need elevated privileges.
+
+`prodigy_lig` should now be accessible from the command line.
+
+## Pip-less Installation
+
+### Dependencies
+
+Biopython is the only dependency of `prodigy_lig`. The biopython homepage
+contains installation instructions along with helpful debugging information.
+
+### Download
 
 If git is installed and correctly configured on your machine you should be able
 to do
@@ -60,7 +79,7 @@ git clone https://github.com/haddocking/prodigy-lig/
 Otherwise, you can download prodigy_lig from the following
 [link](https://github.com/haddocking/prodigy-lig/archive/master.zip).
 
-## Installation
+### Installation
 
 If you cloned with git you can simply switch to the directory and start using
 the code with `cd prodigy-lig`.
@@ -68,7 +87,7 @@ the code with `cd prodigy-lig`.
 If not then you will need to unzip the directory first with
 `unzip prodigy-lig-master.zip`.
 
-## Configuration
+### Configuration
 
 If you want to make your python environment aware of prodigy_lig (allowing you
 to import it like any other module) then you need to modify your PYTHONPATH
@@ -118,7 +137,7 @@ You can read more about the usage of prodigy_lig in the next section
 
 # Usage
 
-Running `prodigy_lig.py -h` will list some basic information about the code.
+Running `prodigy_lig -h` will list some basic information about the code.
 
 ```
 usage: prodigy_lig.py [-h] -c CHAINS CHAINS -i INPUT_FILE [-e ELECTROSTATICS]
