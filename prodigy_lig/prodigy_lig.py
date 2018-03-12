@@ -3,19 +3,14 @@
 
 """
 Calculate the Binding Affinity score using the PRODIGY-LIG model
-
 prodigy_lig dependes on biopython for the structure manipulations
 and only requires a single structure file (in mmCIF or PDB format)
 as input.
-
 prodigy_lig is licensed under the Apache License 2.0 included in
 the LICENSE file of this repository or at the following URL
-
 https://github.com/haddocking/prodigy-lig/blob/master/LICENSE
-
 If you use prodigy_lig in your research please cite the following
 papers:
-
 1. to be submitted
 2. https://doi.org/10.1007/s10822-017-0049-y
 """
@@ -27,7 +22,6 @@ __version__ = '0.0.0'
 from os.path import basename, splitext
 import sys
 import argparse
-import string
 
 try:
     from Bio.PDB import PDBParser, FastMMCIFParser, PDBIO
@@ -90,7 +84,6 @@ class ProdigyLig(object):
     def _clean_structure(self, structure):
         """
         Remove all the unnecessary elements from the structure.
-
         Water molecules, ions and cofactors need to be removed from the structure
         because otherwise their presence might affect the algorithm. In the case
         of multi-model structures we are only keeping the first model.
@@ -98,12 +91,11 @@ class ProdigyLig(object):
         def _is_it_a_residue(residue):
             """
             Check for the presence of backbone atoms.
-
             Pretty often PDB files contain modified residues that are part of
             a protein but are classified as HETATM, such as a selenomethionine
             (MSE). We want to keep these atoms instead of discarding them.
             """
-            backbone_atoms = set(["C", "CA", "N", "O"])
+            backbone_atoms = {"C", "CA", "N", "O"}
             residue_atoms = set([_.id for _ in residue.child_list])
 
             if len(residue_atoms.intersection(backbone_atoms)) >= 3:
@@ -112,7 +104,7 @@ class ProdigyLig(object):
                 return False
 
         if len(structure) > 1:
-            for i in xrange(1, len(structure)):
+            for i in range(1, len(structure)):
                 structure.detach_child(structure[i].id)
 
         chains = self.chains[0] + list(self.chains[1][0])
@@ -122,8 +114,8 @@ class ProdigyLig(object):
         for chain in specified_chains:
             if chain not in structure_chains:
                 raise RuntimeWarning(
-                    ("Chain {} specified during runtime wasn't found in "
-                    "the structure").format(chain)
+                    ('Chain {} specified during runtime wasn\'t found '
+                     'in the structure').format(chain)
                 )
 
         ligand_chain, ligand_residue = self.chains[1]
@@ -133,8 +125,8 @@ class ProdigyLig(object):
 
         if ligand_residue not in ligand_residues:
             raise RuntimeError(
-                ("Ligand identifier {} not found"
-                " in chain {} of the input file.").format(
+                ('Ligand identifier {} not found '
+                 'in chain {} of the input file.').format(
                     ligand_residue,
                     ligand_chain
                 )
@@ -142,9 +134,9 @@ class ProdigyLig(object):
 
         if ligand_residues.count(ligand_residue) > 1:
             raise RuntimeError(
-                ("Ligand identifier {} found {} times in"
-                " chain {} of the input file. Please "
-                "remove the redundant molecule(s).").format(
+                ('Ligand identifier {} found {} times in '
+                 'chain {} of the input file. Please '
+                 'remove the redundant molecule(s).').format(
                     ligand_residue,
                     ligand_residues.count(ligand_residue),
                     ligand_chain
@@ -177,7 +169,6 @@ class ProdigyLig(object):
     def _parse_chains(chains):
         """
         Parse the chain and return a list of lists.
-
         The chains specification requires one chain per interactor. The first
         argument following the -c flag is the specfication for the protein
         selection and more than one chain ids can be specified by comma separating
@@ -189,51 +180,43 @@ class ProdigyLig(object):
         parsed_chains = []
         chains = [_.upper() for _ in chains]
         flattened_chains_string = "".join(chains)
-        protein_chain_string, ligand_chain_string = chains
+        protein_chain_string, ligand_chain_string = [_.upper() for _ in chains]
 
         try:
-            flattened_chains_string.decode("ascii")
+            flattened_chains_string.encode("ascii")
         except UnicodeDecodeError:
             raise RuntimeError(
-                "Please use uppercase ASCII characters [ A-Z ]."
+                'Please use uppercase ASCII characters [ A-Z ].'
             )
 
-        if len(protein_chain_string) == 1:
-            if protein_chain_string not in string.uppercase:
+        for char in protein_chain_string:
+            if not char.isalpha() and char != ",":
                 raise RuntimeError(
-                    "Please use standard chain identifiers [ A-Z ]."
+                    'Use uppercase ASCII characters [ A-Z ] to specify the'
+                    ' chains and , to separate them.'
                 )
-        else:
-            for char in protein_chain_string:
-                if char not in string.uppercase and char != ",":
-                    raise RuntimeError(
-                        "Use uppercase ASCII characters [ A-Z ] to speciy the"
-                        " chains and , to separate them."
-                    )
 
-            # Make sure that "A," or "A,B," didn't slip through
-            comma_count = protein_chain_string.count(",")
-            chain_count = len(set(protein_chain_string).intersection(string.uppercase))
+        # Make sure that "A," or "A,B," didn't slip through
+        comma_count = protein_chain_string.count(",")
 
-            if comma_count != chain_count -1:
-                raise RuntimeError(
-                    "Specify multiple chains like this: prodigy_lig.py -c A,B C"
-                )
+        if 2 * comma_count + 1 != len(protein_chain_string):
+            raise RuntimeError(
+                'Specify multiple chains like this: prodigy_lig.py -c A,B C'
+            )
 
         parsed_chains.append(protein_chain_string.split(","))
-        alphanum = set(string.uppercase + string.digits)
 
         ligand_specification = (
-            "Use uppercase ASCII characters [ A-Z ] to speciy the "
-            "chain and ligand identifiers. Separate the ligand "
-            "identifier from its chain by colon. prodigy_lig.py "
-            "-c A B:LIG"
+            'Use uppercase ASCII characters [ A-Z ] to speciy the '
+            'chain and ligand identifiers. Separate the ligand '
+            'identifier from its chain by colon. prodigy_lig.py '
+            '-c A B:LIG'
         )
         if len(ligand_chain_string) != 5:
             raise RuntimeError(ligand_specification)
 
         for char in ligand_chain_string:
-            if char not in alphanum and char != ":":
+            if not char.isalnum() and char != ":":
                 raise RuntimeError(ligand_specification)
 
         if ligand_chain_string.count(":") != 1:
@@ -304,10 +287,10 @@ class ProdigyLig(object):
         io.set_structure(self.structure)
         io.save(outfile)
 
+
 def extract_electrostatics(pdb_file):
     """
     Extracts the electrostatics energy from a HADDOCK PDB file.
-
     :param pdb_file: The input PDB file.
     :return: Electrostatics energy
     """
@@ -333,9 +316,11 @@ def extract_electrostatics(pdb_file):
 def calc_atomic_contacts(structure, chains, cutoff=10.5):
     """
     Calculate the contacts without calling out to the CPP code.
-
     :param structure: Biopython structure object of the input file
+    :param chains: the interactor selection as array (e.g [ ['A', 'B'], ['A','LIG'] ])
+    :param cutoff: the distance cutoff to determine interactions in Angstrom
     :return: List of contacts
+
     """
     contacts = []
     structure = structure[0]
@@ -368,14 +353,11 @@ def calculate_contact_counts(contacts):
     """
     Calculate the counts of the various atomic contact types based on the
     types of atoms that are in contact. The categories are:
-
     CC: Carbon-Carbon
     NN: Nitrogen-Nitrogen
     OO: Oxygen-Oxygen
     XX: Other-Other
-
     and the combinations: CN, CO, CX, NO, NX, OX
-
     :param contacts: The output of the calc_atomic_contacts functions
     :return: dict of the counts of each category defined above
     """
@@ -383,7 +365,6 @@ def calculate_contact_counts(contacts):
         """
         Classify the atom involved in the interaction in one of the categories
         laid out in calculate_atomic_contacts.
-
         :param atom: The atom involved in the interaction
         :return: Atom type. One of C, N, O, X
         """
@@ -392,13 +373,10 @@ def calculate_contact_counts(contacts):
         else:
             return 'X'
 
-        return None
-
     def _classify_contact(atom_classes):
         """
         Classify the contact in one of the categories defined in the function
         calculate_atomic_contact_counts.
-
         :param atom_classes: Class of the atoms involved in the interaction
         :type atom_classes: List of length 2
         :return: One of CC, NN, OO, XX, CN, CO, CX, NO, NX, OX
@@ -440,7 +418,7 @@ def calculate_contact_counts(contacts):
         'OX': 0
     }
 
-    allowed_atoms = set(['C', 'N', 'O', 'F', 'CL', 'BR', 'S', 'P'])
+    allowed_atoms = {'C', 'N', 'O', 'F', 'CL', 'BR', 'S', 'P'}
 
     for line in contacts:
         if len(line) == 0:
@@ -466,7 +444,6 @@ def calculate_score(contact_counts, electrostatics_energy):
     """
     Calculates the PRODIGY-lig score based on the contact counts and the
     electrostatics energy.
-
     :param contact_counts: Counts of the CC, NN, OO, XX contacts
     :type contact_counts: dict
     :param electrostatics_energy: Electrostatics energy calculated by HADDOCK
@@ -631,6 +608,7 @@ def main():
         output_file_name = splitext(prodigy_lig.structure.id)[0]
         output_file_name += "-processed.pdb"
         prodigy_lig.print_structure(output_file_name)
+
 
 if __name__ == "__main__":
     main()
