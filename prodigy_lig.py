@@ -140,6 +140,17 @@ class ProdigyLig(object):
                 )
             )
 
+        if ligand_residues.count(ligand_residue) > 1:
+            raise RuntimeError(
+                ("Ligand identifier {} found {} times in"
+                " chain {} of the input file. Please "
+                "remove the redundant molecule(s).").format(
+                    ligand_residue,
+                    ligand_residues.count(ligand_residue),
+                    ligand_chain
+                )
+            )
+
         for chain in structure_chains:
             if chain not in specified_chains:
                 structure[0].detach_child(chain)
