@@ -4,23 +4,39 @@
 """
 Calculate the Binding Affinity score using the PRODIGY-LIG model
 
-This script only requires one PDB file as input and expects that
-the all-atom contact script lives somewhere in the PATH. Failing
-that the user can provide the path to the executable.
+prodigy_lig dependes on biopython for the structure manipulations
+and only requires a single structure file (in mmCIF or PDB format)
+as input.
 
-Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt
+prodigy_lig is licensed under the Apache License 2.0 included in
+the LICENSE file of this repository or at the following URL
+
+https://github.com/haddocking/prodigy-lig/blob/master/LICENSE
+
+If you use prodigy_lig in your research please cite the following
+papers:
+
+1. to be submitted
+2. https://doi.org/10.1007/s10822-017-0049-y
 """
 
 from __future__ import print_function
+
+__version__ = '0.0.0'
+
 from os.path import basename, splitext
 import sys
 import argparse
 import string
-from subprocess import Popen, PIPE
-from StringIO import StringIO
-from collections import namedtuple
 
-from Bio.PDB import PDBParser, FastMMCIFParser, PDBIO
+try:
+    from Bio.PDB import PDBParser, FastMMCIFParser, PDBIO
+except ImportError:
+    print(
+        "prodigy_lig depends on Biopython. Please install "
+        "Biopython along with its dependencies and restart."
+    )
+    sys.exit(1)
 
 
 class ProdigyLig(object):
@@ -503,7 +519,11 @@ def calculate_DG_electrostatics(contact_counts, electrostatics_energy):
 
 def _parse_arguments():
     """Parse the command line arguments."""
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt'
+    )
 
     parser.add_argument(
         '-c',
@@ -511,10 +531,12 @@ def _parse_arguments():
         required=True,
         nargs=2,
         help=(
-            'Which chains to use. You can specify multi-chain selections'
-            ' by comma separating the chain identifiers (e.g. -c A,B C,D).'
-            ' In that case only contacts between chains A - C+D and B - C+D'
-            ' will be considered.'
+            'Which chains to use. Expects two sets of arguments. The first '
+            'set refers to the protein selection and multiple chains can be'
+            ' specified by separating the chain identifiers with commas. The'
+            ' second set refers to the ligand and requires one chain and the'
+            ' residue identifier of the ligand. A typical use case could be '
+            'the following: prodigy_lig.py -c A,B A:LIG'
         )
     )
     parser.add_argument(
@@ -528,8 +550,8 @@ def _parse_arguments():
         '--electrostatics',
         required=False,
         type=float,
-        help=u'This is the electrostatics energy as calculated during the'
-             u' water refinement stage of HADDOCK.'
+        help='This is the electrostatics energy as calculated during the'
+             ' water refinement stage of HADDOCK.'
     )
     parser.add_argument(
         '-d',
@@ -537,8 +559,8 @@ def _parse_arguments():
         required=False,
         default=10.5,
         type=float,
-        help=u'This is the distance cutoff for the Atomic Contacts '
-             u' (def = 10.5Å).'
+        help='This is the distance cutoff for the Atomic Contacts '
+             ' (def = 10.5Å).'
     )
     parser.add_argument(
         '-o',
@@ -556,8 +578,14 @@ def _parse_arguments():
         default=False,
         action='store_true',
         required=False,
-        help='Be more verbose with the output and include the '
-             'calculated contact counts in the output.'
+        help='Include the calculated contact counts in the output.'
+    )
+    parser.add_argument(
+        '-V',
+        '--version',
+        action='version',
+        version='%(prog)s {}'.format(__version__),
+        help='Print the version and exit.'
     )
 
     return parser.parse_args()
