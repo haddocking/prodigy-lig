@@ -2,6 +2,9 @@ import os
 from setuptools import setup
 import codecs
 
+from prodigy_lig import prodigy_lig
+
+
 def read(fname):
     return codecs.open(os.path.join(os.path.dirname(__file__), fname), encoding='utf-8').read()
 
@@ -12,7 +15,7 @@ requirements = [
 
 setup(
     name='prodigy_lig',
-    version = "0.0.0",
+    version = prodigy_lig.__version__,
     description=("Calculate protein-small molecule binding affinities."),
     url='http://github.com/haddocking/prodigy-lig',
     author='Computational Structural Biology Group @ Utrecht University',
