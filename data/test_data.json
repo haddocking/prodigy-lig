@@ -1,0 +1,22 @@
+{
+    "elec": {
+        "1PY2": {
+            "electrostatics": -43.4775,
+            "chains": [
+                "A",
+                "B:FRH"
+            ],
+            "dg": "-8.27",
+            "score": "119.68"
+        }
+    },
+    "no-elec": {
+        "1PY2": {
+            "chains": [
+                "A",
+                "B:FRH"
+            ],
+            "dg": "-8.96"
+        }
+    }
+}
