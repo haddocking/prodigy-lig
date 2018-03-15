@@ -18,7 +18,7 @@ papers:
 2. https://doi.org/10.1007/s10822-017-0049-y
 """
 
-__version__ = '0.0.0'
+__version__ = '1.0.0'
 
 from os.path import basename, splitext
 import sys
