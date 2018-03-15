@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/118625187.svg)](https://zenodo.org/badge/latestdoi/118625187)
+
 Table of Contents
 =================
 
