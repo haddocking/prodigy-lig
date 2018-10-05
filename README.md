@@ -268,8 +268,8 @@ If our predictive model or any scripts are useful to you, consider citing them i
 publications:
 
 **Vangone A, Schaarschmidt J, Koukos P, Geng C, Citro N, Trellet M, Xue L, Bonvin A.**: Large-scale
-prediction of binding affinity in protein-small ligand complexes: the PRODIGY-LIG web server.
-*Bioinformatics submitted*
+prediction of binding affinity in protein-small ligand complexes: the PRODIGY-LIG web server. *Bioinformatics*,
+([link](https://doi.org/10.1093/bioinformatics/bty816))
 
 **Kurkcuoglu Z, Koukos P, Citro N, Trellet M, Rodrigues J, Moreira I, Roel-Touris J,
 Melquiond A, Geng C, Schaarschmidt J, Xue L, Vangone A, Bonvin AMJJ.**: Performance
