@@ -14,7 +14,7 @@ https://github.com/haddocking/prodigy-lig/blob/master/LICENSE
 If you use prodigy_lig in your research please cite the following
 papers:
 
-1. to be submitted
+1. https://doi.org/10.1093/bioinformatics/bty816
 2. https://doi.org/10.1007/s10822-017-0049-y
 """
 
