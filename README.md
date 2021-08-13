@@ -213,7 +213,7 @@ will only impact the formatting and content of your output.
 
 In addition to the contact information prodigy_lig can make use of the electrostatic
 energy of the interaction as well. This refers to the intermolecular electrostatic
-energy as calculated by [HADDOCK](http://milou.science.uu.nl/services/HADDOCK2.2).
+energy as calculated by [HADDOCK](https://wenmr.science.uu.nl/haddock2.4).
 
 If you know this energy because you have refined your complex through HADDOCK then
 you can specify this using the `-e` flag (`--electrostatics`). Additionaly, if your
