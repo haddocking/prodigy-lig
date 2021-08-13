@@ -256,7 +256,7 @@ Finally you can use the `-V` flag (`--version`) to get the version of the code.
 ## I don't like the command line.
 
 Too bad. Luckily for you, prodigy_lig has also been implemented in a freely accessible
-[webserver](https://nestor.science.uu.nl/prodigy/lig).
+[webserver](https://bianca.science.uu.nl/prodigy/lig).
 
 # Licensing
 
