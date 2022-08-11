@@ -18,11 +18,10 @@ papers:
 2. https://doi.org/10.1007/s10822-017-0049-y
 """
 
-__version__ = '1.0.0'
-
 from os.path import basename, splitext
 import sys
 import argparse
+from . import version
 
 try:
     from Bio.PDB import PDBParser, FastMMCIFParser, PDBIO
@@ -581,7 +580,7 @@ def _parse_arguments():
         '-V',
         '--version',
         action='version',
-        version='%(prog)s {}'.format(__version__),
+        version='%(prog)s {}'.format(version),
         help='Print the version and exit.'
     )
 
