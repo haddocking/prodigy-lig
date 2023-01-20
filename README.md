@@ -1,3 +1,4 @@
+[![unittests](https://github.com/haddocking/prodigy-lig/actions/workflows/unittests.yml/badge.svg)](https://github.com/haddocking/prodigy-lig/actions/workflows/unittests.yml)
 [![DOI](https://zenodo.org/badge/118625187.svg)](https://zenodo.org/badge/latestdoi/118625187)
 
 Table of Contents
