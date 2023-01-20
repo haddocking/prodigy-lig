@@ -1,1 +1,1 @@
-from .prodigy_lig import *
+version = '1.0.1'
