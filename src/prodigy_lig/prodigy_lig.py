@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """
 Calculate the Binding Affinity score using the PRODIGY-LIG model
 prodigy_lig dependes on biopython for the structure manipulations
@@ -21,7 +18,6 @@ papers:
 from os.path import basename, splitext
 import sys
 import argparse
-from . import version
 
 try:
     from Bio.PDB import PDBParser, FastMMCIFParser, PDBIO
@@ -575,13 +571,6 @@ def _parse_arguments():
         action='store_true',
         required=False,
         help='Include the calculated contact counts in the output.'
-    )
-    parser.add_argument(
-        '-V',
-        '--version',
-        action='version',
-        version='%(prog)s {}'.format(version),
-        help='Print the version and exit.'
     )
 
     return parser.parse_args()
