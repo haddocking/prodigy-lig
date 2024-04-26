@@ -1,0 +1,22 @@
+# YAML 1.2
+# Metadata for citation of this software according to the CFF format (https://citation-file-format.github.io/)
+cff-version: 1.0.3
+message: If you use this software, please cite it using these metadata.
+# FIXME title as repository name might not be the best name, please make human readable
+title: 'haddocking/prodigy-lig: First public release of PRODIGY-LIG'
+doi: 10.5281/zenodo.1199495
+# FIXME splitting of full names is error prone, please check if given/family name are correct
+authors:
+- given-names: Panagiotis
+  family-names: Koukos
+  affiliation: Utrecht University
+- given-names: Joerg
+  family-names: Schaarschmidt
+  affiliation: Utrecht University
+- given-names: Anna
+  family-names: Vangone
+  affiliation:
+version: 1.0.0
+date-released: 2018-03-15
+repository-code: https://github.com/haddocking/prodigy-lig
+license: other-open
