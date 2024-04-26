@@ -6,7 +6,7 @@
 [![ci](https://github.com/haddocking/prodigy-lig/actions/workflows/ci.yml/badge.svg)](https://github.com/haddocking/prodigy-lig/actions/workflows/ci.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/fbf5e21772f74ff498492d74389a0525)](https://www.codacy.com/gh/haddocking/prodigy-lig/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=haddocking/prodigy-lig&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://app.codacy.com/project/badge/Coverage/fbf5e21772f74ff498492d74389a0525)](https://www.codacy.com/gh/haddocking/prodigy-lig/dashboard?utm_source=github.com&utm_medium=referral&utm_content=haddocking/prodigy-lig&utm_campaign=Badge_Coverage)
-[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B%20%20%E2%97%8F%20%20%E2%97%8B-orange)](https://fair-software.eu)
+[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F-green)](https://fair-software.eu)
 
 PRODIGY-LIG (**PRO**tein bin**DI**ng ener**GY** prediction - **LIG**ands) is a structure-based method for the prediction of binding affinity in protein-small ligand (such as drugs or metabolites) complexes.
 
