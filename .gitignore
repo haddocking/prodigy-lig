@@ -49,3 +49,8 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+
+
+.venv
+.vscode
+poetry.lock
