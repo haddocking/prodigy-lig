@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "prodigy-lig"
-version = "1.1.0"
+version = "1.1.1"
 description = "Calculate protein-small molecule binding affinities."
 authors = ["BonvinLab <bonvinlab.support@uu.nl>"]
 license = "Apache-2.0"
