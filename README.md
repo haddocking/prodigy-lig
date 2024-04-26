@@ -1,5 +1,8 @@
 # PRODIGY-LIG / Small Molecule Binding Affinity Prediction
 
+![PyPI - License](https://img.shields.io/pypi/l/prodigy-lig)
+![PyPI - Status](https://img.shields.io/pypi/status/prodigy-lig)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/prodigy-lig)
 [![ci](https://github.com/haddocking/prodigy-lig/actions/workflows/ci.yml/badge.svg)](https://github.com/haddocking/prodigy-lig/actions/workflows/ci.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/fbf5e21772f74ff498492d74389a0525)](https://www.codacy.com/gh/haddocking/prodigy-lig/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=haddocking/prodigy-lig&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://app.codacy.com/project/badge/Coverage/fbf5e21772f74ff498492d74389a0525)](https://www.codacy.com/gh/haddocking/prodigy-lig/dashboard?utm_source=github.com&utm_medium=referral&utm_content=haddocking/prodigy-lig&utm_campaign=Badge_Coverage)
