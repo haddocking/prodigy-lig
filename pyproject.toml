@@ -13,7 +13,6 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Bio-Informatics",
   "Intended Audience :: Science/Research",
 ]
-packages = [{ include = "prodigy_lig" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -28,6 +27,13 @@ hypothesis = "^6.100.1"
 
 [tool.poetry.scripts]
 prodigy_lig = "prodigy_lig.prodigy_lig:main"
+
+[tool.setuptools]
+include-package-data = true
+packages = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
 
 [build-system]
 requires = ["poetry-core"]
