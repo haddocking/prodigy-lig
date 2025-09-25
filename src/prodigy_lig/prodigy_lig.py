@@ -31,6 +31,7 @@ except ImportError:
 
 class ProdigyLig(object):
     """Run the prodigy-lig calculations and store all the relevant output."""
+
     def __init__(self, structure, chains, electrostatics, cutoff=10.5):
         """Initialise the Prodigy-lig instance."""
         self.chains = self._parse_chains(chains)
@@ -47,30 +48,32 @@ class ProdigyLig(object):
         """
         API method used by the webserver
         """
-        self.atomic_contacts = calc_atomic_contacts(self.structure, self.chains, self.cutoff)
+        self.atomic_contacts = calc_atomic_contacts(
+            self.structure, self.chains, self.cutoff
+        )
 
         if len(self.atomic_contacts) == 0:
-            raise RuntimeWarning(
-                "There are no contacts between the specified chains."
-            )
+            raise RuntimeWarning("There are no contacts between the specified chains.")
 
         self.contact_counts = calculate_contact_counts(self.atomic_contacts)
 
         if self.electrostatics is not None:
             self.dg_score = calculate_score(self.contact_counts, self.electrostatics)
-            self.dg_elec = calculate_DG_electrostatics(self.contact_counts, self.electrostatics)
+            self.dg_elec = calculate_DG_electrostatics(
+                self.contact_counts, self.electrostatics
+            )
         self.dg = calculate_DG(self.contact_counts)
 
     def as_dict(self):
         """Return the data of the class as a dictionary for the server."""
         data = {
-            'structure': self.structure.id,
-            'chains': self.chains,
-            'electrostatics': self.electrostatics,
-            'cutoff': self.cutoff,
-            'dg_score': self.dg_score,
-            'dg_elec': self.dg_elec,
-            'dg': self.dg
+            "structure": self.structure.id,
+            "chains": self.chains,
+            "electrostatics": self.electrostatics,
+            "cutoff": self.cutoff,
+            "dg_score": self.dg_score,
+            "dg_elec": self.dg_elec,
+            "dg": self.dg,
         }
 
         data.update(self.contact_counts)
@@ -85,6 +88,7 @@ class ProdigyLig(object):
         because otherwise their presence might affect the algorithm. In the case
         of multi-model structures we are only keeping the first model.
         """
+
         def _is_it_a_residue(residue):
             """
             Check for the presence of backbone atoms.
@@ -112,32 +116,30 @@ class ProdigyLig(object):
         for chain in specified_chains:
             if chain not in structure_chains:
                 raise RuntimeWarning(
-                    ('Chain {} specified during runtime wasn\'t found '
-                     'in the structure').format(chain)
+                    (
+                        "Chain {} specified during runtime wasn't found "
+                        "in the structure"
+                    ).format(chain)
                 )
 
         ligand_chain, ligand_residue = self.chains[1]
-        ligand_residues = [
-            _.resname for _ in structure[0][ligand_chain].child_list
-        ]
+        ligand_residues = [_.resname for _ in structure[0][ligand_chain].child_list]
 
         if ligand_residue not in ligand_residues:
             raise RuntimeError(
-                ('Ligand identifier {} not found '
-                 'in chain {} of the input file.').format(
-                    ligand_residue,
-                    ligand_chain
-                )
+                (
+                    "Ligand identifier {} not found " "in chain {} of the input file."
+                ).format(ligand_residue, ligand_chain)
             )
 
         if ligand_residues.count(ligand_residue) > 1:
             raise RuntimeError(
-                ('Ligand identifier {} found {} times in '
-                 'chain {} of the input file. Please '
-                 'remove the redundant molecule(s).').format(
-                    ligand_residue,
-                    ligand_residues.count(ligand_residue),
-                    ligand_chain
+                (
+                    "Ligand identifier {} found {} times in "
+                    "chain {} of the input file. Please "
+                    "remove the redundant molecule(s)."
+                ).format(
+                    ligand_residue, ligand_residues.count(ligand_residue), ligand_chain
                 )
             )
 
@@ -177,22 +179,19 @@ class ProdigyLig(object):
         as a list.
         """
         parsed_chains = []
-        chains = [_.upper() for _ in chains]
         flattened_chains_string = "".join(chains)
         protein_chain_string, ligand_chain_string = [_.upper() for _ in chains]
 
         try:
             flattened_chains_string.encode("ascii")
         except UnicodeDecodeError:
-            raise RuntimeError(
-                'Please use uppercase ASCII characters [ A-Z ].'
-            )
+            raise RuntimeError("Please use uppercase ASCII characters [ A-Z ].")
 
         for char in protein_chain_string:
             if not char.isalpha() and char != ",":
                 raise RuntimeError(
-                    'Use uppercase ASCII characters [ A-Z ] to specify the'
-                    ' chains and , to separate them.'
+                    "Use uppercase ASCII characters [ A-Z ] to specify the"
+                    " chains and , to separate them."
                 )
 
         # Make sure that "A," or "A,B," didn't slip through
@@ -200,16 +199,16 @@ class ProdigyLig(object):
 
         if 2 * comma_count + 1 != len(protein_chain_string):
             raise RuntimeError(
-                'Specify multiple chains like this: prodigy_lig.py -c A,B C'
+                "Specify multiple chains like this: prodigy_lig.py -c A,B C"
             )
 
         parsed_chains.append(protein_chain_string.split(","))
 
         ligand_specification = (
-            'Use uppercase ASCII characters [ A-Z ] to speciy the '
-            'chain and ligand identifiers. Separate the ligand '
-            'identifier from its chain by colon. prodigy_lig.py '
-            '-c A B:LIG'
+            "Use uppercase ASCII characters [ A-Z ] to speciy the "
+            "chain and ligand identifiers. Separate the ligand "
+            "identifier from its chain by colon. prodigy_lig.py "
+            "-c A B:LIG"
         )
         if len(ligand_chain_string) != 5:
             raise RuntimeError(ligand_specification)
@@ -232,10 +231,10 @@ class ProdigyLig(object):
 
         return parsed_chains
 
-    def print_contacts(self, outfile=''):
+    def print_contacts(self, outfile=""):
         """Print the atomic contacts to STDOUT or the specified handle."""
         if outfile:
-            handle = open(outfile, 'w')
+            handle = open(outfile, "w")
         else:
             handle = sys.stdout
 
@@ -245,10 +244,10 @@ class ProdigyLig(object):
         if handle is not sys.stdout:
             handle.close()
 
-    def print_prediction(self, outfile='', verbose=False):
+    def print_prediction(self, outfile="", verbose=False):
         """Print to the File or STDOUT if no filename is specified."""
         if outfile:
-            handle = open(outfile, 'w')
+            handle = open(outfile, "w")
         else:
             handle = sys.stdout
         if self.electrostatics is not None:
@@ -261,7 +260,9 @@ class ProdigyLig(object):
                     header.append(key)
                     values.append(value)
                 handle.write("\t".join(header) + "\n")
-                handle.write(("{}" + "\t{:.2f}" * 3 + "\t{:4d}" * 10 + "\n").format(*values))
+                handle.write(
+                    ("{}" + "\t{:.2f}" * 3 + "\t{:4d}" * 10 + "\n").format(*values)
+                )
             else:
                 handle.write("\t".join(header) + "\n")
                 handle.write("{}\t{:.2f}\t{:.2f}\n".format(*values))
@@ -280,7 +281,7 @@ class ProdigyLig(object):
         if handle is not sys.stdout:
             handle.close()
 
-    def print_structure(self, outfile=''):
+    def print_structure(self, outfile=""):
         """Store the processed structure in a file."""
         io = PDBIO()
         io.set_structure(self.structure)
@@ -297,13 +298,13 @@ def extract_electrostatics(pdb_file):
     electrostatics = None
     for line in pdb_file:
         # scan for Haddock energies line and assign electrostatics
-        if line.startswith('REMARK energies'):
+        if line.startswith("REMARK energies"):
             line = line.rstrip()
-            line = line.replace('REMARK energies: ', '')
-            electrostatics = float(line.split(',')[6])
+            line = line.replace("REMARK energies: ", "")
+            electrostatics = float(line.split(",")[6])
             break
         # stop on first ATOM Line as remarks should be beforehand
-        elif line.startswith('ATOM'):
+        elif line.startswith("ATOM"):
             break
     # try to reset file handle for further processing
     try:
@@ -334,17 +335,21 @@ def calc_atomic_contacts(structure, chains, cutoff=10.5):
                     if prot_atom.parent.resname != lig_atom.parent.resname:
                         dist = lig_atom - prot_atom
                         if dist <= cutoff:
-                            contacts.append("\t".join([
-                                prot_atom.parent.resname,
-                                prot_atom.parent.parent.id,
-                                str(prot_atom.parent.id[1]),
-                                prot_atom.element,
-                                lig_atom.parent.resname,
-                                lig_atom.parent.parent.id,
-                                str(lig_atom.parent.id[1]),
-                                lig_atom.element,
-                                str(dist)
-                            ]))
+                            contacts.append(
+                                "\t".join(
+                                    [
+                                        prot_atom.parent.resname,
+                                        prot_atom.parent.parent.id,
+                                        str(prot_atom.parent.id[1]),
+                                        prot_atom.element,
+                                        lig_atom.parent.resname,
+                                        lig_atom.parent.parent.id,
+                                        str(lig_atom.parent.id[1]),
+                                        lig_atom.element,
+                                        str(dist),
+                                    ]
+                                )
+                            )
 
     return contacts
 
@@ -362,6 +367,7 @@ def calculate_contact_counts(contacts):
     :param contacts: The output of the calc_atomic_contacts functions
     :return: dict of the counts of each category defined above
     """
+
     def _classify_atom(atom):
         """
         Classify the atom involved in the interaction in one of the categories
@@ -370,10 +376,10 @@ def calculate_contact_counts(contacts):
         :param atom: The atom involved in the interaction
         :return: Atom type. One of C, N, O, X
         """
-        if atom == 'C' or atom == 'N' or atom == 'O':
+        if atom == "C" or atom == "N" or atom == "O":
             return atom
         else:
-            return 'X'
+            return "X"
 
     def _classify_contact(atom_classes):
         """
@@ -385,43 +391,43 @@ def calculate_contact_counts(contacts):
         :return: One of CC, NN, OO, XX, CN, CO, CX, NO, NX, OX
         """
         atom_1, atom_2 = atom_classes
-        if atom_1 == 'C' and atom_2 == 'C':
-            return 'CC'
-        elif (atom_1 == 'C' and atom_2 == 'N') or (atom_1 == 'N' and atom_2 == 'C'):
-            return 'CN'
-        elif (atom_1 == 'C' and atom_2 == 'O') or (atom_1 == 'O' and atom_2 == 'C'):
-            return 'CO'
-        elif (atom_1 == 'C' and atom_2 == 'X') or (atom_1 == 'X' and atom_2 == 'C'):
-            return 'CX'
-        elif (atom_1 == 'N' and atom_2 == 'N') or (atom_1 == 'N' and atom_2 == 'N'):
-            return 'NN'
-        elif (atom_1 == 'N' and atom_2 == 'O') or (atom_1 == 'O' and atom_2 == 'N'):
-            return 'NO'
-        elif (atom_1 == 'N' and atom_2 == 'X') or (atom_1 == 'X' and atom_2 == 'N'):
-            return 'NX'
-        elif (atom_1 == 'O' and atom_2 == 'O') or (atom_1 == 'O' and atom_2 == 'O'):
-            return 'OO'
-        elif (atom_1 == 'O' and atom_2 == 'X') or (atom_1 == 'X' and atom_2 == 'O'):
-            return 'OX'
-        elif (atom_1 == 'X' and atom_2 == 'X') or (atom_1 == 'X' and atom_2 == 'X'):
-            return 'XX'
+        if atom_1 == "C" and atom_2 == "C":
+            return "CC"
+        elif (atom_1 == "C" and atom_2 == "N") or (atom_1 == "N" and atom_2 == "C"):
+            return "CN"
+        elif (atom_1 == "C" and atom_2 == "O") or (atom_1 == "O" and atom_2 == "C"):
+            return "CO"
+        elif (atom_1 == "C" and atom_2 == "X") or (atom_1 == "X" and atom_2 == "C"):
+            return "CX"
+        elif (atom_1 == "N" and atom_2 == "N") or (atom_1 == "N" and atom_2 == "N"):
+            return "NN"
+        elif (atom_1 == "N" and atom_2 == "O") or (atom_1 == "O" and atom_2 == "N"):
+            return "NO"
+        elif (atom_1 == "N" and atom_2 == "X") or (atom_1 == "X" and atom_2 == "N"):
+            return "NX"
+        elif (atom_1 == "O" and atom_2 == "O") or (atom_1 == "O" and atom_2 == "O"):
+            return "OO"
+        elif (atom_1 == "O" and atom_2 == "X") or (atom_1 == "X" and atom_2 == "O"):
+            return "OX"
+        elif (atom_1 == "X" and atom_2 == "X") or (atom_1 == "X" and atom_2 == "X"):
+            return "XX"
         else:
             return None
 
     counts = {
-        'CC': 0,
-        'NN': 0,
-        'OO': 0,
-        'XX': 0,
-        'CN': 0,
-        'CO': 0,
-        'CX': 0,
-        'NO': 0,
-        'NX': 0,
-        'OX': 0
+        "CC": 0,
+        "NN": 0,
+        "OO": 0,
+        "XX": 0,
+        "CN": 0,
+        "CO": 0,
+        "CX": 0,
+        "NO": 0,
+        "NX": 0,
+        "OX": 0,
     }
 
-    allowed_atoms = {'C', 'N', 'O', 'F', 'CL', 'BR', 'S', 'P'}
+    allowed_atoms = {"C", "N", "O", "F", "CL", "BR", "S", "P"}
 
     for line in contacts:
         if len(line) == 0:
@@ -462,12 +468,12 @@ def calculate_score(contact_counts, electrostatics_energy):
     intercept = 187.011384
 
     return (
-        (elec_weight * electrostatics_energy) +
-        (cc_weight * contact_counts['CC']) +
-        (nn_weight * contact_counts['NN']) +
-        (oo_weight * contact_counts['OO']) +
-        (xx_weight * contact_counts['XX']) +
-        intercept
+        (elec_weight * electrostatics_energy)
+        + (cc_weight * contact_counts["CC"])
+        + (nn_weight * contact_counts["NN"])
+        + (oo_weight * contact_counts["OO"])
+        + (xx_weight * contact_counts["XX"])
+        + intercept
     )
 
 
@@ -482,10 +488,10 @@ def calculate_DG(contact_counts):
     intercept = -5.1923181
 
     return (
-        (nn_weight * contact_counts['NN']) +
-        (xx_weight * contact_counts['XX']) +
-        (cn_weight * contact_counts['CN']) +
-        intercept
+        (nn_weight * contact_counts["NN"])
+        + (xx_weight * contact_counts["XX"])
+        + (cn_weight * contact_counts["CN"])
+        + intercept
     )
 
 
@@ -501,11 +507,11 @@ def calculate_DG_electrostatics(contact_counts, electrostatics_energy):
     intercept = -5.1002233
 
     return (
-        (elec_weight * electrostatics_energy) +
-        (cc_weight * contact_counts['CC']) +
-        (nn_weight * contact_counts['NN']) +
-        (xx_weight * contact_counts['XX']) +
-        intercept
+        (elec_weight * electrostatics_energy)
+        + (cc_weight * contact_counts["CC"])
+        + (nn_weight * contact_counts["NN"])
+        + (xx_weight * contact_counts["XX"])
+        + intercept
     )
 
 
@@ -514,63 +520,62 @@ def _parse_arguments():
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog='Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt'
+        epilog="Authors: Panagiotis Koukos, Anna Vangone, Joerg Schaarschmidt",
     )
 
     parser.add_argument(
-        '-c',
-        '--chains',
+        "-c",
+        "--chains",
         required=True,
         nargs=2,
         help=(
-            'Which chains to use. Expects two sets of arguments. The first '
-            'set refers to the protein selection and multiple chains can be'
-            ' specified by separating the chain identifiers with commas. The'
-            ' second set refers to the ligand and requires one chain and the'
-            ' residue identifier of the ligand. A typical use case could be '
-            'the following: prodigy_lig.py -c A,B A:LIG'
-        )
+            "Which chains to use. Expects two sets of arguments. The first "
+            "set refers to the protein selection and multiple chains can be"
+            " specified by separating the chain identifiers with commas. The"
+            " second set refers to the ligand and requires one chain and the"
+            " residue identifier of the ligand. A typical use case could be "
+            "the following: prodigy_lig.py -c A,B A:LIG"
+        ),
     )
     parser.add_argument(
-        '-i',
-        '--input_file',
+        "-i",
+        "--input_file",
         required=True,
-        help='This is the PDB/mmcif file for which the score will be calculated.'
+        help="This is the PDB/mmcif file for which the score will be calculated.",
     )
     parser.add_argument(
-        '-e',
-        '--electrostatics',
+        "-e",
+        "--electrostatics",
         required=False,
         type=float,
-        help='This is the electrostatics energy as calculated during the'
-             ' water refinement stage of HADDOCK.'
+        help="This is the electrostatics energy as calculated during the"
+        " water refinement stage of HADDOCK.",
     )
     parser.add_argument(
-        '-d',
-        '--distance_cutoff',
+        "-d",
+        "--distance_cutoff",
         required=False,
         default=10.5,
         type=float,
-        help='This is the distance cutoff for the Atomic Contacts '
-             ' (def = 10.5Å).'
+        help="This is the distance cutoff for the Atomic Contacts " " (def = 10.5Å).",
     )
     parser.add_argument(
-        '-o',
-        '--output_file',
+        "-o",
+        "--output_file",
         default=None,
-        action='store_true',
+        action="store_true",
         required=False,
-        help='Store the processed file. The filename will be the name '
-             'of the input with -processed appended just before the '
-             'file ending.'
+        help="Store the processed file. The filename will be the name "
+        "of the input with -processed appended just before the "
+        "file ending.",
     )
     parser.add_argument(
-        '-v',
-        '--verbose',
+        "-v",
+        "--verbose",
         default=False,
-        action='store_true',
+        action="store_true",
         required=False,
-        help='Include the calculated contact counts in the output.'
+        help="Include the calculated contact counts in the output.",
     )
 
     return parser.parse_args()
@@ -581,25 +586,27 @@ def main():
     args = _parse_arguments()
     fname, s_ext = splitext(basename(args.input_file))
     parser = None
-    if s_ext in {'.pdb', '.ent'}:
+    if s_ext in {".pdb", ".ent"}:
         parser = PDBParser(QUIET=1)
     elif s_ext == ".cif":
         parser = FastMMCIFParser(QUIET=1)
 
     with open(args.input_file) as in_file:
         # try to set electrostatics from input file if not provided by user
-        electrostatics = args.electrostatics \
-            if args.electrostatics or s_ext == '.cif' \
+        electrostatics = (
+            args.electrostatics
+            if args.electrostatics or s_ext == ".cif"
             else extract_electrostatics(in_file)
+        )
         prodigy_lig = ProdigyLig(
             parser.get_structure(fname, in_file),
             chains=args.chains,
             electrostatics=electrostatics,
-            cutoff=args.distance_cutoff
+            cutoff=args.distance_cutoff,
         )
 
     prodigy_lig.predict()
-    prodigy_lig.print_prediction('', args.verbose)
+    prodigy_lig.print_prediction("", args.verbose)
 
     if args.output_file is not None:
         output_file_name = splitext(prodigy_lig.structure.id)[0]
